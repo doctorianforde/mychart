@@ -26,7 +26,7 @@ export default function LoginPage() {
     setError('');
     try {
       if (isRegistering) {
-        if (role === 'staff' && staffCode !== 'Medicaldoctor2026!') {
+        if (role === 'staff' && staffCode !== 'ACC20252026' && staffCode !== 'Medicaldoctor2026!') {
           setError('Invalid Staff Code');
           return;
         }
@@ -59,11 +59,11 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-24 bg-[#EFE7DD]">
       <style dangerouslySetInnerHTML={{__html: `
-        @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@400;700&display=swap');
       `}} />
       <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-xl shadow-lg border border-[#D9A68A]/20">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-[#4A3A33] tracking-tight font-['Playfair_Display']">ALERA CARE COLLECTIVE</h1>
+          <h1 className="text-3xl font-bold text-[#4A3A33] tracking-tight font-['Montserrat']">MyChart by Alera</h1>
           <h2 className="mt-2 text-sm text-[#4A3A33]/80 font-['Lato']">
             {isRegistering ? 'Create your new account' : 'Sign in to access your records'}
           </h2>
