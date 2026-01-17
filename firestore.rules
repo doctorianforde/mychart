@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if the requester is staff
+    function isStaff() {
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'staff';
+    }
+
+    // Helper function to check if the requester is the owner of the data
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Users Collection (Profiles)
+    match /users/{userId} {
+      // Staff can access all; Patients can only access their own
+      allow read, write: if isStaff() || isOwner(userId);
+    }
+
+    // Patient Data/Records
+    match /records/{recordId} {
+      // Staff can access all; Patients can access if the record belongs to them
+      allow read, write: if isStaff() || (request.auth != null && resource.data.patientId == request.auth.uid);
+    }
+  }
+}
