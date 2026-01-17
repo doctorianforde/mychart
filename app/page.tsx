@@ -25,7 +25,7 @@ export default function MyChartDashboard() {
     setError('');
     try {
       if (isRegistering) {
-        if (role === 'staff' && staffCode !== 'Medicaldoctor2026!') {
+        if (role === 'staff' && staffCode !== 'ACC20252026' && staffCode !== 'Medicaldoctor2026!') {
           setError('Invalid Staff Code');
           return;
         }
@@ -71,14 +71,14 @@ export default function MyChartDashboard() {
     return () => unsubscribe();
   }, []);
 
-  if (loading) return <div className="p-10">Loading Alera Care...</div>;
+  if (loading) return <div className="p-10">Loading MyChart...</div>;
 
   if (!user) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-slate-50">
         <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-xl shadow-lg border border-slate-100">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Alera Care Collective Portal</h1>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">MyChart by Alera</h1>
             <h2 className="mt-2 text-sm text-slate-600">
               {isRegistering ? 'Create your new account' : 'Sign in to access your records'}
             </h2>
@@ -202,14 +202,14 @@ export default function MyChartDashboard() {
   return (
     <main className="flex min-h-screen flex-col items-center p-8 bg-[#EFE7DD]">
       <style dangerouslySetInnerHTML={{__html: `
-        @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@400;700&display=swap');
       `}} />
       <div className="w-full max-w-4xl flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-[#D9A68A]/20">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 bg-[#4A3A33] rounded-full flex items-center justify-center">
-            <span className="text-[#EFE7DD] font-bold text-lg font-['Playfair_Display']">A</span>
+            <span className="text-[#EFE7DD] font-bold text-lg font-['Montserrat']">A</span>
           </div>
-          <h1 className="text-2xl font-bold text-[#4A3A33] font-['Playfair_Display']">Alera Care Collective</h1>
+          <h1 className="text-2xl font-bold text-[#4A3A33] font-['Montserrat']">MyChart by Alera</h1>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-[#4A3A33] font-medium font-['Lato']">{user.email}</span>
@@ -225,7 +225,7 @@ export default function MyChartDashboard() {
       <div className="w-full max-w-4xl grid gap-6">
         {/* Feature Placeholder */}
         <div className="p-6 border border-[#A8C0CE]/30 rounded-xl shadow-sm bg-white">
-          <h2 className="text-xl font-semibold mb-4 text-[#4A3A33] font-['Playfair_Display']">Medical Records</h2>
+          <h2 className="text-xl font-semibold mb-4 text-[#4A3A33] font-['Montserrat']">Medical Records</h2>
           {records.length === 0 ? (
             <div className="text-center py-10 bg-[#EFE7DD]/30 rounded-lg border border-dashed border-[#A8C0CE]">
               <p className="text-[#4A3A33]/70 font-['Lato']">No records found.</p>
