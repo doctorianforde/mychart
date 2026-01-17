@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { getPatientRecords } from './actions';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '@/src/lib/firebase';
 
 export default function MyChartDashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -25,9 +25,13 @@ export default function MyChartDashboard() {
       
       if (currentUser) {
         // User is logged in, try to fetch data
-        const response = await getPatientRecords(currentUser.uid);
-        if (response.success && response.data) {
-          setRecords(response.data);
+        try {
+          const q = query(collection(db, "records"), where("patientId", "==", currentUser.uid));
+          const querySnapshot = await getDocs(q);
+          const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setRecords(data);
+        } catch (error) {
+          console.error("Error fetching records:", error);
         }
       }
       setLoading(false);
