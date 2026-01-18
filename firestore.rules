@@ -4,7 +4,8 @@ service cloud.firestore {
     
     // Helper function to check if the requester is staff
     function isStaff() {
-      return request.auth != null && 
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'staff';
     }
 
@@ -21,8 +22,13 @@ service cloud.firestore {
 
     // Patient Data/Records
     match /records/{recordId} {
-      // Staff can access all; Patients can access if the record belongs to them
-      allow read, write: if isStaff() || (request.auth != null && resource.data.patientId == request.auth.uid);
+      // Staff can read/write everything.
+      // Patients can create records for themselves.
+      allow create: if isStaff() || (request.auth != null && request.resource.data.patientId == request.auth.uid);
+      // Staff can read everything.
+      // Patients can read their own records.
+      // Patients can update/delete their own records.
+      allow read, update, delete: if isStaff() || (request.auth != null && resource.data.patientId == request.auth.uid);
     }
   }
 }
