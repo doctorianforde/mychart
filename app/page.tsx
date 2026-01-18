@@ -7,7 +7,7 @@ import { collection, query, where, getDocs, addDoc, getDoc, doc, updateDoc } fro
 import { auth, db } from '@/src/lib/firebase';
 import { login, loginWithGoogle, register, uploadProfilePicture } from '@/src/lib/authService';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 export default function MyChartDashboard() {
@@ -427,7 +427,11 @@ export default function MyChartDashboard() {
       tableRows.push(recordData);
     });
 
-    (doc as any).autoTable(tableColumn, tableRows, { startY: 20 });
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20
+    });
     doc.save('patient_records.pdf');
   };
 
