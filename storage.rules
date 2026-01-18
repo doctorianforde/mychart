@@ -1,0 +1,14 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper to check if user is staff (requires reading Firestore from Storage rules, 
+    // or using Custom Claims. For simplicity, we allow authenticated users to upload to their own path)
+    
+    match /profile_pictures/{userId} {
+      // Allow write if it's the user's own file OR if the requester is staff (logic handled in app)
+      // Note: Storage rules don't easily read Firestore data without setup, so we stick to ownership here.
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
