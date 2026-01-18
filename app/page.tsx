@@ -718,7 +718,7 @@ export default function MyChartDashboard() {
               </ul>
               <div className="mt-4 p-4 border rounded-lg bg-gray-50">
                 <h4 className="font-semibold">Correct Posture Diagram</h4>
-                <p className="text-sm text-gray-600">[Placeholder for a diagram showing correct seating posture: back straight, feet flat, arm supported at heart level.]</p>
+                <Image src="/bp_posture.jpg" alt="Correct posture for blood pressure measurement" width={500} height={300} style={{ objectFit: 'contain' }} />
               </div>
             </div>
           </div>
