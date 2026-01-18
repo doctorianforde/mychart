@@ -345,33 +345,33 @@ export default function MyChartDashboard() {
 
   if (!user) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-slate-50">
-        <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-xl shadow-lg border border-slate-100">
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <Image src="/blacklogo2.png" alt="MyChart by Alera" width={200} height={50} style={{ objectFit: 'contain' }} />
+      <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gradient-to-br from-[#EFE7DD] via-[#f7f2ea] to-[#EFE7DD]">
+        <div className="w-full max-w-md">
+          <div className="bg-white/80 backdrop-blur-sm p-10 rounded-2xl shadow-xl border border-white/50">
+            <div className="text-center mb-8">
+              <div className="flex justify-center mb-6">
+                <Image src="/blacklogo2.png" alt="MyChart by Alera" width={200} height={50} style={{ objectFit: 'contain' }} priority />
+              </div>
+              <h2 className="text-sm font-medium text-[#4A3A33]/70 tracking-wide">
+                {isRegistering ? 'Create your new account' : 'Sign in to access your records'}
+              </h2>
             </div>
-            <h2 className="mt-2 text-sm text-slate-600">
-              {isRegistering ? 'Create your new account' : 'Sign in to access your records'}
-            </h2>
-          </div>
-          
-          {error && <p className="text-red-500 text-center">{error}</p>}
+
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="mb-6 bg-gradient-to-r from-red-50 to-red-50/50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+              <p className="text-sm font-medium text-red-700">{error}</p>
             </div>
           )}
 
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-4">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-5">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700">Email address</label>
+                <label htmlFor="email" className="block text-sm font-semibold text-[#4A3A33] mb-2">Email address</label>
                 <input
                   id="email"
                   type="email"
                   required
-                  className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border"
+                  className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-sm p-3 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -379,81 +379,78 @@ export default function MyChartDashboard() {
               </div>
               <div>
                 <div className="relative">
-                  <label htmlFor="password" className="block text-sm font-medium text-slate-700">Password</label>
+                  <label htmlFor="password" className="block text-sm font-semibold text-[#4A3A33] mb-2">Password</label>
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     required
-                    className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border pr-10"
+                    className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-sm p-3 pr-12 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center mt-6"
+                    className="absolute top-9 right-3 text-xs text-[#8AAB88] hover:text-[#4A3A33] font-medium px-2 py-1 rounded-md hover:bg-[#8AAB88]/10"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? (
-                      <span className="text-xs text-slate-500 font-medium">Hide</span>
-                    ) : (
-                      <span className="text-xs text-slate-500 font-medium">Show</span>
-                    )}
+                    {showPassword ? 'Hide' : 'Show'}
                   </button>
                 </div>
               </div>
             </div>
 
             {isRegistering && (
-              <div className="space-y-4">
+              <div className="space-y-5 pt-2">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Full Name</label>
+                  <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Full Name</label>
                   <input
                     type="text"
                     required
-                    className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border"
+                    className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-sm p-3 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
                     placeholder="John Doe"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Age</label>
+                  <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Age</label>
                   <input
                     type="number"
                     required
-                    className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border"
+                    className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-sm p-3 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
                     placeholder="30"
                     value={age}
                     onChange={(e) => setAge(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Comorbidities</label>
+                  <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Comorbidities</label>
                   <textarea
-                    className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border"
+                    rows={3}
+                    className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-sm p-3 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all resize-none"
                     placeholder="e.g. Hypertension, Asthma"
                     value={comorbidities}
                     onChange={(e) => setComorbidities(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Phone Number</label>
+                  <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Phone Number</label>
                   <input
                     type="tel"
                     required
-                    className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border"
+                    className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-sm p-3 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
                     placeholder="(555) 555-5555"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">I am a:</label>
+                  <label className="block text-sm font-semibold text-[#4A3A33] mb-2">I am a:</label>
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border"
+                    className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-sm p-3 text-[#4A3A33] transition-all cursor-pointer"
                   >
                     <option value="patient">Patient</option>
                     <option value="staff">Staff</option>
@@ -461,49 +458,48 @@ export default function MyChartDashboard() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#4A3A33] font-['Lato']">Profile Picture</label>
+                  <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Profile Picture</label>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={(e) => setProfilePic(e.target.files ? e.target.files[0] : null)}
-                    className="mt-1 block w-full text-sm text-[#4A3A33] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#EFE7DD] file:text-[#4A3A33] hover:file:bg-[#D9A68A]/20"
+                    className="block w-full text-sm text-[#4A3A33] file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-[#EFE7DD] file:text-[#4A3A33] hover:file:bg-[#D9A68A]/30 file:transition-all file:cursor-pointer cursor-pointer"
                   />
                 </div>
 
                 {role === 'staff' && (
                   <div>
-                    <label className="block text-sm font-medium text-slate-700">Staff Access Code</label>
+                    <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Staff Access Code</label>
                     <input
                       type="password"
                       placeholder="Enter code"
                       value={staffCode}
                       onChange={(e) => setStaffCode(e.target.value)}
-                      className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border"
+                      className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-sm p-3 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
                     />
                   </div>
                 )}
               </div>
             )}
 
-            <button type="submit" className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-              {isRegistering ? 'Register' : 'Sign in'}
+            <button type="submit" className="w-full flex justify-center py-3.5 px-6 rounded-xl shadow-md text-sm font-semibold text-white bg-gradient-to-r from-[#4A3A33] to-[#5e4d44] hover:from-[#3a2e28] hover:to-[#4A3A33] focus:outline-none focus:ring-4 focus:ring-[#4A3A33]/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+              {isRegistering ? 'Create Account' : 'Sign In'}
             </button>
           </form>
 
-          <div className="relative">
+          <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
+              <div className="w-full border-t border-[#D9A68A]/30" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-slate-500">Or continue with</span>
+              <span className="bg-white/80 backdrop-blur-sm px-4 text-[#4A3A33]/60 font-medium">Or continue with</span>
             </div>
           </div>
 
           <button
             onClick={handleGoogleLogin}
-            className="w-full flex justify-center items-center gap-3 py-2.5 px-4 border border-slate-300 rounded-lg shadow-sm bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors"
+            className="w-full flex justify-center items-center gap-3 py-3 px-6 border-2 border-[#D9A68A]/30 rounded-xl shadow-sm bg-white hover:bg-[#EFE7DD]/30 text-sm font-semibold text-[#4A3A33] focus:outline-none focus:ring-4 focus:ring-[#8AAB88]/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
           >
-            Google
             <svg className="h-5 w-5" aria-hidden="true" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -513,13 +509,14 @@ export default function MyChartDashboard() {
             Sign in with Google
           </button>
 
-          <div className="text-center">
+          <div className="text-center mt-6">
             <button
               onClick={() => setIsRegistering(!isRegistering)}
-              className="text-sm font-medium text-[#8AAB88] hover:text-[#4A3A33] transition-colors font-['Lato']"
+              className="text-sm font-semibold text-[#8AAB88] hover:text-[#4A3A33] underline decoration-2 underline-offset-4 transition-colors"
             >
               {isRegistering ? 'Already have an account? Sign in' : 'Need an account? Register'}
             </button>
+          </div>
           </div>
         </div>
       </main>
@@ -527,272 +524,290 @@ export default function MyChartDashboard() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-8 bg-[#EFE7DD]">
-      <style dangerouslySetInnerHTML={{__html: `
-        @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@400;700&display=swap');
-      `}} />
-      <div className="w-full max-w-4xl flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-[#D9A68A]/20">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 bg-[#4A3A33] rounded-full flex items-center justify-center overflow-hidden">
-            {userData?.photoURL ? (
-              <img src={userData.photoURL} alt="Profile" className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-[#EFE7DD] font-bold text-lg font-['Montserrat']">{user.email?.charAt(0).toUpperCase()}</span>
-            )}
-          </div>
-          <Image src="/blacklogo2.png" alt="MyChart by Alera" width={180} height={45} style={{ objectFit: 'contain' }} />
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-[#4A3A33] font-medium font-['Lato']">{user.email}</span>
-          <button 
-            onClick={() => signOut(auth)}
-            className="px-4 py-2 text-sm text-[#D9A68A] hover:bg-[#D9A68A]/10 rounded-lg transition-colors font-medium border border-[#D9A68A] font-['Lato']"
-          >
-            Sign Out
-          </button>
-        </div>
-      </div>
-
-      {/* Profile Section */}
-      {(userData?.role === 'patient' || selectedPatient) && (
-        <div className="w-full max-w-4xl mb-8 p-6 bg-white rounded-xl shadow-sm border border-[#D9A68A]/20">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-[#4A3A33] font-['Montserrat']">
-                {selectedPatient ? selectedPatient.fullName : userData.fullName || 'Patient Profile'}
-              </h2>
-              <p className="text-[#4A3A33]/70 font-['Lato']">
-                {selectedPatient ? selectedPatient.email : userData.email}
-              </p>
+    <main className="min-h-screen bg-gradient-to-br from-[#EFE7DD] via-[#f7f2ea] to-[#EFE7DD] p-6 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8 bg-white/90 backdrop-blur-sm p-5 rounded-2xl shadow-lg border border-white/60">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 bg-gradient-to-br from-[#4A3A33] to-[#5e4d44] rounded-2xl flex items-center justify-center overflow-hidden shadow-md ring-2 ring-white">
+                {userData?.photoURL ? (
+                  <img src={userData.photoURL} alt="Profile" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-[#EFE7DD] font-bold text-xl font-['Montserrat']">{user.email?.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div>
+                <Image src="/blacklogo2.png" alt="MyChart by Alera" width={180} height={45} style={{ objectFit: 'contain' }} priority />
+                <p className="text-xs text-[#4A3A33]/60 mt-0.5 font-medium">Patient Portal</p>
+              </div>
             </div>
-            {userData?.role === 'staff' && selectedPatient && (
-              <button 
-                onClick={() => setSelectedPatient(null)}
-                className="text-sm text-[#8AAB88] hover:underline"
+            <div className="flex items-center gap-4">
+              <div className="text-right hidden md:block">
+                <p className="text-sm font-semibold text-[#4A3A33]">{userData?.fullName || 'User'}</p>
+                <p className="text-xs text-[#4A3A33]/60">{user.email}</p>
+              </div>
+              <button
+                onClick={() => signOut(auth)}
+                className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-[#D9A68A] to-[#c9906f] hover:from-[#c9906f] hover:to-[#D9A68A] rounded-xl transition-all shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
               >
-                Close Profile
+                Sign Out
               </button>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-bold text-[#4A3A33] mb-2">Details</h3>
-              <p><span className="font-medium">Age:</span> {selectedPatient ? selectedPatient.age : userData.age}</p>
-              <p><span className="font-medium">Phone:</span> {selectedPatient ? selectedPatient.phoneNumber : userData.phoneNumber}</p>
-              <p><span className="font-medium">Comorbidities:</span> {selectedPatient ? selectedPatient.comorbidities : userData.comorbidities}</p>
             </div>
-            <div>
-              <h3 className="font-bold text-[#4A3A33] mb-2">Prescriptions</h3>
-              {userData?.role === 'staff' ? (
-                <div className="space-y-2">
-                  <textarea 
-                    className="w-full h-32 rounded-lg border-[#A8C0CE] shadow-sm p-2 text-[#4A3A33]"
-                    value={prescriptionText}
-                    onChange={(e) => setPrescriptionText(e.target.value)}
-                    placeholder="Enter prescriptions here..."
-                  />
-                  <button 
-                    onClick={handleUpdatePrescription}
-                    className="px-4 py-2 bg-[#8AAB88] text-white rounded-lg hover:bg-[#7a9b78] transition-colors"
-                  >
-                    Update Prescription
-                  </button>
-                </div>
-              ) : (
-                <div className="p-4 bg-[#EFE7DD]/30 rounded-lg border border-[#A8C0CE] min-h-[8rem]">
-                  <p className="whitespace-pre-wrap">{userData.prescriptions || 'No active prescriptions.'}</p>
-                </div>
+          </div>
+        </div>
+
+        {/* Profile Section */}
+        {(userData?.role === 'patient' || selectedPatient) && (
+          <div className="mb-8 p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-[#4A3A33] font-['Montserrat'] mb-1">
+                  {selectedPatient ? selectedPatient.fullName : userData.fullName || 'Patient Profile'}
+                </h2>
+                <p className="text-[#4A3A33]/60 font-medium">
+                  {selectedPatient ? selectedPatient.email : userData.email}
+                </p>
+              </div>
+              {userData?.role === 'staff' && selectedPatient && (
+                <button
+                  onClick={() => setSelectedPatient(null)}
+                  className="text-sm font-semibold text-[#8AAB88] hover:text-[#4A3A33] px-4 py-2 rounded-lg hover:bg-[#8AAB88]/10 transition-all"
+                >
+                  Close Profile
+                </button>
               )}
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-[#4A3A33] font-['Montserrat'] mb-4 pb-2 border-b-2 border-[#D9A68A]/30">Patient Details</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-[#4A3A33] min-w-[100px]">Age:</span>
+                    <span className="text-sm text-[#4A3A33]/80">{selectedPatient ? selectedPatient.age : userData.age}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-[#4A3A33] min-w-[100px]">Phone:</span>
+                    <span className="text-sm text-[#4A3A33]/80">{selectedPatient ? selectedPatient.phoneNumber : userData.phoneNumber}</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-sm font-semibold text-[#4A3A33] min-w-[100px]">Comorbidities:</span>
+                    <span className="text-sm text-[#4A3A33]/80">{selectedPatient ? selectedPatient.comorbidities : userData.comorbidities || 'None reported'}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-[#4A3A33] font-['Montserrat'] mb-4 pb-2 border-b-2 border-[#D9A68A]/30">Prescriptions</h3>
+                {userData?.role === 'staff' ? (
+                  <div className="space-y-3">
+                    <textarea
+                      className="w-full h-32 rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 text-sm text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all resize-none"
+                      value={prescriptionText}
+                      onChange={(e) => setPrescriptionText(e.target.value)}
+                      placeholder="Enter prescriptions here..."
+                    />
+                    <button
+                      onClick={handleUpdatePrescription}
+                      className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] hover:from-[#7a9b78] hover:to-[#8AAB88] rounded-xl transition-all shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
+                    >
+                      Update Prescription
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-5 bg-gradient-to-br from-[#EFE7DD]/50 to-[#f7f2ea]/30 rounded-xl border border-[#D9A68A]/20 min-h-[8rem] shadow-sm">
+                    <p className="whitespace-pre-wrap text-sm text-[#4A3A33]">{userData.prescriptions || 'No active prescriptions.'}</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Booking Section - Only for Patients */}
-      {userData?.role === 'patient' && (
-        <div className="w-full max-w-4xl mb-8 p-6 bg-white rounded-xl shadow-sm border border-[#D9A68A]/20">
-          <h2 className="text-xl font-semibold mb-4 text-[#4A3A33] font-['Montserrat']">Book an Appointment</h2>
-          <iframe
-            src="https://alera-care-collective.au5.cliniko.com/bookings"
-            style={{ width: '100%', height: '600px', border: 'none', borderRadius: '8px' }}
-            title="Cliniko Bookings"
-          ></iframe>
-        </div>
-      )}
+        {/* Booking Section - Only for Patients */}
+        {userData?.role === 'patient' && (
+          <div className="mb-8 p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+            <h2 className="text-2xl font-bold mb-6 text-[#4A3A33] font-['Montserrat']">Book an Appointment</h2>
+            <div className="rounded-xl overflow-hidden shadow-md border border-[#D9A68A]/20">
+              <iframe
+                src="https://alera-care-collective.au5.cliniko.com/bookings"
+                style={{ width: '100%', height: '600px', border: 'none' }}
+                title="Cliniko Bookings"
+              ></iframe>
+            </div>
+          </div>
+        )}
 
-      {/* Hypertension Log Section - Only for Patients */}
-      {userData?.role === 'patient' && (
-        <div className="w-full max-w-4xl mb-8 p-6 bg-white rounded-xl shadow-sm border border-[#D9A68A]/20">
-          <h2 className="text-xl font-semibold mb-4 text-[#4A3A33] font-['Montserrat']">Log Blood Pressure Reading</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <form onSubmit={handleHypertensionLog} className="space-y-4">
+        {/* Hypertension Log Section - Only for Patients */}
+        {userData?.role === 'patient' && (
+          <div className="mb-8 p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+            <h2 className="text-2xl font-bold mb-6 text-[#4A3A33] font-['Montserrat']">Log Blood Pressure Reading</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <form onSubmit={handleHypertensionLog} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={logDate}
+                    onChange={(e) => setLogDate(e.target.value)}
+                    className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 text-[#4A3A33] transition-all"
+                  />
+                </div>
+                <div>
+                  <div className="relative">
+                    <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Time of Reading</label>
+                    <input
+                      type="time"
+                      required
+                      value={logTime}
+                      onChange={(e) => setLogTime(e.target.value)}
+                      className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 text-[#4A3A33] transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSetCurrentTime}
+                      className="absolute top-10 right-3 text-xs text-[#8AAB88] hover:text-[#4A3A33] font-semibold px-2 py-1 rounded-md hover:bg-[#8AAB88]/10"
+                    >
+                      Now
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Reading Site</label>
+                  <select
+                    value={readingSite}
+                    onChange={(e) => setReadingSite(e.target.value)}
+                    className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 text-[#4A3A33] transition-all cursor-pointer"
+                  >
+                    <option value="left_arm">Left Arm</option>
+                    <option value="right_arm">Right Arm</option>
+                    <option value="left_wrist">Left Wrist</option>
+                    <option value="right_wrist">Right Wrist</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Systolic (Top Number)</label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="e.g. 120"
+                    value={systolic}
+                    onChange={(e) => setSystolic(e.target.value)}
+                    className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Diastolic (Bottom Number)</label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="e.g. 80"
+                    value={diastolic}
+                    onChange={(e) => setDiastolic(e.target.value)}
+                    className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Pulse (BPM)</label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="e.g. 70"
+                    value={pulse}
+                    onChange={(e) => setPulse(e.target.value)}
+                    className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
+                  />
+                </div>
+                <button type="submit" className="w-full py-3.5 px-6 rounded-xl shadow-md text-sm font-semibold text-white bg-gradient-to-r from-[#4A3A33] to-[#5e4d44] hover:from-[#3a2e28] hover:to-[#4A3A33] focus:outline-none focus:ring-4 focus:ring-[#4A3A33]/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                  Log BP Reading
+                </button>
+                {hypertensionLogMessage && <p className="text-sm text-[#8AAB88] font-semibold">{hypertensionLogMessage}</p>}
+              </form>
+              <div className="bg-gradient-to-br from-[#EFE7DD]/40 to-[#f7f2ea]/20 p-6 rounded-xl border border-[#D9A68A]/20">
+                <h3 className="text-lg font-bold text-[#4A3A33] font-['Montserrat'] mb-4">How to Measure Your Blood Pressure Correctly</h3>
+                <p className="text-sm text-[#4A3A33]/80 mb-4">Follow these steps from the American Heart Association:</p>
+                <ul className="space-y-3 text-sm text-[#4A3A33]/80">
+                  <li className="flex gap-3"><span className="text-[#8AAB88] font-bold">•</span><span><strong className="text-[#4A3A33]">Be still.</strong> Don't smoke, drink caffeinated beverages or exercise within 30 minutes before measuring your blood pressure. Empty your bladder and ensure at least 5 minutes of quiet rest before measurements.</span></li>
+                  <li className="flex gap-3"><span className="text-[#8AAB88] font-bold">•</span><span><strong className="text-[#4A3A33]">Sit correctly.</strong> Sit with your back straight and supported (on a dining chair, rather than a sofa). Your feet should be flat on the floor and your legs should not be crossed. Your arm should be supported on a flat surface (such as a table) with the upper arm at heart level.</span></li>
+                  <li className="flex gap-3"><span className="text-[#8AAB88] font-bold">•</span><span><strong className="text-[#4A3A33]">Measure on a bare arm.</strong> Roll up your sleeve. The cuff should be placed on a bare arm.</span></li>
+                  <li className="flex gap-3"><span className="text-[#8AAB88] font-bold">•</span><span><strong className="text-[#4A3A33]">Take multiple readings.</strong> Take at least two readings one minute apart and record both results.</span></li>
+                </ul>
+                <div className="mt-6 p-4 rounded-xl bg-white border border-[#D9A68A]/20">
+                  <h4 className="font-semibold text-[#4A3A33] mb-3 text-sm">Correct Posture Diagram</h4>
+                  <Image src="/bp_posture.jpg" alt="Correct posture for blood pressure measurement" width={500} height={300} style={{ objectFit: 'contain' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Diabetes Log Section - Only for Patients */}
+        {userData?.role === 'patient' && (
+          <div className="mb-8 p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+            <h2 className="text-2xl font-bold mb-6 text-[#4A3A33] font-['Montserrat']">Log Glucose Reading</h2>
+            <form onSubmit={handleDiabetesLog} className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-medium text-[#4A3A33] font-['Lato']">Date</label>
-                <input 
-                  type="date" 
-                  required 
-                  value={logDate} 
+                <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Date</label>
+                <input
+                  type="date"
+                  required
+                  value={logDate}
                   onChange={(e) => setLogDate(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border-[#A8C0CE] shadow-sm p-2 text-[#4A3A33]"
+                  className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 text-[#4A3A33] transition-all"
                 />
               </div>
               <div>
                 <div className="relative">
-                  <label className="block text-sm font-medium text-[#4A3A33] font-['Lato']">Time of Reading</label>
-                  <input 
-                    type="time" 
-                    required 
-                    value={logTime} 
+                  <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Time of Reading</label>
+                  <input
+                    type="time"
+                    required
+                    value={logTime}
                     onChange={(e) => setLogTime(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border-[#A8C0CE] shadow-sm p-2 text-[#4A3A33]"
+                    className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 text-[#4A3A33] transition-all"
                   />
                   <button
                     type="button"
                     onClick={handleSetCurrentTime}
-                    className="absolute top-6 right-2 text-xs text-blue-500 hover:underline"
+                    className="absolute top-10 right-3 text-xs text-[#8AAB88] hover:text-[#4A3A33] font-semibold px-2 py-1 rounded-md hover:bg-[#8AAB88]/10"
                   >
                     Now
                   </button>
                 </div>
               </div>
-               <div>
-                <label className="block text-sm font-medium text-[#4A3A33] font-['Lato']">Reading Site</label>
-                <select
-                  value={readingSite}
-                  onChange={(e) => setReadingSite(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border-[#A8C0CE] shadow-sm p-2 text-[#4A3A33]"
-                >
-                  <option value="left_arm">Left Arm</option>
-                  <option value="right_arm">Right Arm</option>
-                  <option value="left_wrist">Left Wrist</option>
-                  <option value="right_wrist">Right Wrist</option>
-                </select>
-              </div>
               <div>
-                <label className="block text-sm font-medium text-[#4A3A33] font-['Lato']">Systolic (Top Number)</label>
-                <input 
-                  type="number" 
-                  required 
+                <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Glucose (mg/dL)</label>
+                <input
+                  type="number"
+                  required
                   placeholder="e.g. 120"
-                  value={systolic} 
-                  onChange={(e) => setSystolic(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border-[#A8C0CE] shadow-sm p-2 text-[#4A3A33]"
+                  value={glucoseValue}
+                  onChange={(e) => setGlucoseValue(e.target.value)}
+                  className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#4A3A33] font-['Lato']">Diastolic (Bottom Number)</label>
-                <input 
-                  type="number" 
-                  required 
-                  placeholder="e.g. 80"
-                  value={diastolic} 
-                  onChange={(e) => setDiastolic(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border-[#A8C0CE] shadow-sm p-2 text-[#4A3A33]"
+                <label className="block text-sm font-semibold text-[#4A3A33] mb-2">Time of Last Meal</label>
+                <input
+                  type="time"
+                  required
+                  value={lastMealTime}
+                  onChange={(e) => setLastMealTime(e.target.value)}
+                  className="block w-full rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 text-[#4A3A33] transition-all"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-[#4A3A33] font-['Lato']">Pulse (BPM)</label>
-                <input 
-                  type="number" 
-                  required 
-                  placeholder="e.g. 70"
-                  value={pulse} 
-                  onChange={(e) => setPulse(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border-[#A8C0CE] shadow-sm p-2 text-[#4A3A33]"
-                />
-              </div>
-              <button type="submit" className="w-full py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-[#EFE7DD] bg-[#4A3A33] hover:bg-[#3a2e28] transition-colors font-['Lato']">
-                Log BP Reading
+              <button type="submit" className="md:col-span-2 mt-2 w-full py-3.5 px-6 rounded-xl shadow-md text-sm font-semibold text-white bg-gradient-to-r from-[#4A3A33] to-[#5e4d44] hover:from-[#3a2e28] hover:to-[#4A3A33] focus:outline-none focus:ring-4 focus:ring-[#4A3A33]/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                Log Reading
               </button>
-              {hypertensionLogMessage && <p className="mt-4 text-sm text-[#8AAB88] font-['Lato']">{hypertensionLogMessage}</p>}
             </form>
-            <div className="prose">
-              <h3 className="font-semibold text-[#4A3A33] font-['Montserrat']">How to Measure Your Blood Pressure Correctly</h3>
-              <p>Follow these steps from the American Heart Association:</p>
-              <ul>
-                <li><strong>Be still.</strong> Don't smoke, drink caffeinated beverages or exercise within 30 minutes before measuring your blood pressure. Empty your bladder and ensure at least 5 minutes of quiet rest before measurements.</li>
-                <li><strong>Sit correctly.</strong> Sit with your back straight and supported (on a dining chair, rather than a sofa). Your feet should be flat on the floor and your legs should not be crossed. Your arm should be supported on a flat surface (such as a table) with the upper arm at heart level.</li>
-                <li><strong>Measure on a bare arm.</strong> Roll up your sleeve. The cuff should be placed on a bare arm.</li>
-                <li><strong>Take multiple readings.</strong> Take at least two readings one minute apart and record both results.</li>
-              </ul>
-              <div className="mt-4 p-4 border rounded-lg bg-gray-50">
-                <h4 className="font-semibold">Correct Posture Diagram</h4>
-                <Image src="/bp_posture.jpg" alt="Correct posture for blood pressure measurement" width={500} height={300} style={{ objectFit: 'contain' }} />
-              </div>
-            </div>
+            {logMessage && <p className="mt-4 text-sm text-[#8AAB88] font-semibold">{logMessage}</p>}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Diabetes Log Section - Only for Patients */}
-      {userData?.role === 'patient' && (
-        <div className="w-full max-w-4xl mb-8 p-6 bg-white rounded-xl shadow-sm border border-[#D9A68A]/20">
-          <h2 className="text-xl font-semibold mb-4 text-[#4A3A33] font-['Montserrat']">Log Glucose Reading</h2>
-          <form onSubmit={handleDiabetesLog} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[#4A3A33] font-['Lato']">Date</label>
-              <input 
-                type="date" 
-                required 
-                value={logDate} 
-                onChange={(e) => setLogDate(e.target.value)}
-                className="mt-1 block w-full rounded-lg border-[#A8C0CE] shadow-sm p-2 text-[#4A3A33]"
-              />
-            </div>
-            <div>
-              <div className="relative">
-                <label className="block text-sm font-medium text-[#4A3A33] font-['Lato']">Time of Reading</label>
-                <input 
-                  type="time" 
-                  required 
-                  value={logTime} 
-                  onChange={(e) => setLogTime(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border-[#A8C0CE] shadow-sm p-2 text-[#4A3A33]"
-                />
-                <button
-                  type="button"
-                  onClick={handleSetCurrentTime}
-                  className="absolute top-6 right-2 text-xs text-blue-500 hover:underline"
-                >
-                  Now
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#4A3A33] font-['Lato']">Glucose (mg/dL)</label>
-              <input 
-                type="number" 
-                required 
-                placeholder="e.g. 120"
-                value={glucoseValue} 
-                onChange={(e) => setGlucoseValue(e.target.value)}
-                className="mt-1 block w-full rounded-lg border-[#A8C0CE] shadow-sm p-2 text-[#4A3A33]"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#4A3A33] font-['Lato']">Time of Last Meal</label>
-              <input 
-                type="time" 
-                required 
-                value={lastMealTime} 
-                onChange={(e) => setLastMealTime(e.target.value)}
-                className="mt-1 block w-full rounded-lg border-[#A8C0CE] shadow-sm p-2 text-[#4A3A33]"
-              />
-            </div>
-            <button type="submit" className="md:col-span-2 mt-2 w-full py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-[#EFE7DD] bg-[#4A3A33] hover:bg-[#3a2e28] transition-colors font-['Lato']">
-              Log Reading
-            </button>
-          </form>
-          {logMessage && <p className="mt-4 text-sm text-[#8AAB88] font-['Lato']">{logMessage}</p>}
-        </div>
-      )}
-
-      <div className="w-full max-w-4xl grid gap-6">
-        {/* Feature Placeholder */}
-        <div className="p-6 border border-[#A8C0CE]/30 rounded-xl shadow-sm bg-white">
-          <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-            <h2 className="text-xl font-semibold text-[#4A3A33] font-['Montserrat']">
+        <div className="p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <h2 className="text-2xl font-bold text-[#4A3A33] font-['Montserrat']">
               {userData?.role === 'staff' ? 'All Patient Records' : 'Medical Records'}
             </h2>
             {userData?.role === 'staff' && (
@@ -801,44 +816,64 @@ export default function MyChartDashboard() {
                 placeholder="Search by email, phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full md:w-64 rounded-lg border-[#A8C0CE] shadow-sm p-2 text-sm text-[#4A3A33] font-['Lato'] border"
+                className="w-full md:w-80 rounded-xl border border-[#D9A68A]/30 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 text-sm text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
               />
             )}
           </div>
           {filteredRecords.length === 0 ? (
-            <div className="text-center py-10 bg-[#EFE7DD]/30 rounded-lg border border-dashed border-[#A8C0CE]">
-              <p className="text-[#4A3A33]/70 font-['Lato']">No records found.</p>
+            <div className="text-center py-16 bg-gradient-to-br from-[#EFE7DD]/40 to-[#f7f2ea]/20 rounded-xl border-2 border-dashed border-[#D9A68A]/40">
+              <div className="max-w-sm mx-auto">
+                <div className="w-16 h-16 bg-[#D9A68A]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-[#D9A68A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <p className="text-[#4A3A33]/70 font-medium">No records found.</p>
+                <p className="text-sm text-[#4A3A33]/50 mt-1">Your health readings will appear here once logged.</p>
+              </div>
             </div>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {filteredRecords.map((r) => (
-                <li key={r.id} className="p-4 bg-white rounded-lg border border-[#A8C0ce]/30 hover:border-[#8AAB88] transition-colors shadow-sm text-[#4A3A33] font-['Lato']">
+                <li key={r.id} className="p-5 bg-gradient-to-br from-white to-[#EFE7DD]/10 rounded-xl border border-[#D9A68A]/20 hover:border-[#8AAB88] hover:shadow-md transition-all duration-200 text-[#4A3A33]">
                   <div className="flex justify-between items-center">
-                    <div>
-                      <span className="font-bold block">{r.subType || r.type}</span>
-                      <span className="text-sm text-gray-500">{new Date(r.readingTime || r.createdAt).toLocaleString()}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-bold text-base">{r.subType || r.type}</span>
+                        {r.flag && r.flag !== 'Normal' && (
+                          <span className="text-xs font-bold text-white px-3 py-1 bg-gradient-to-r from-red-500 to-red-600 rounded-full shadow-sm">
+                            {r.flag}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-sm text-[#4A3A33]/60 block">{new Date(r.readingTime || r.createdAt).toLocaleString()}</span>
                       {userData?.role === 'staff' && (
-                        <span className="text-xs text-[#8AAB88] block mt-1 font-medium">Patient: {r.patientEmail}</span>
-                      )}
-                      {userData?.role === 'staff' && (
-                        <button 
-                          onClick={() => viewPatientProfile(r.patientId)}
-                          className="text-xs text-[#4A3A33] underline mt-1 hover:text-[#8AAB88]"
-                        >
-                          View Profile
-                        </button>
+                        <>
+                          <span className="text-xs text-[#8AAB88] block mt-2 font-semibold">Patient: {r.patientEmail}</span>
+                          <button
+                            onClick={() => viewPatientProfile(r.patientId)}
+                            className="text-xs text-[#4A3A33] font-semibold mt-1 hover:text-[#8AAB88] underline decoration-2 underline-offset-2"
+                          >
+                            View Profile →
+                          </button>
+                        </>
                       )}
                     </div>
                     <div className="text-right">
                       {r.type === 'Hypertension Log' ? (
                         <>
-                          <span className="text-xl font-bold block">{r.value.systolic}/{r.value.diastolic} <span className="text-sm font-normal">{r.unit}</span></span>
-                          <span className="text-sm text-gray-500">Pulse: {r.value.pulse} bpm</span>
+                          <span className="text-2xl font-bold block text-[#4A3A33]">
+                            {r.value.systolic}/{r.value.diastolic}
+                            <span className="text-sm font-normal ml-1 text-[#4A3A33]/60">{r.unit}</span>
+                          </span>
+                          <span className="text-sm text-[#4A3A33]/60 mt-1 block">Pulse: {r.value.pulse} bpm</span>
                         </>
                       ) : (
-                        <span className="text-xl font-bold block">{r.value} <span className="text-sm font-normal">{r.unit}</span></span>
+                        <span className="text-2xl font-bold block text-[#4A3A33]">
+                          {r.value}
+                          <span className="text-sm font-normal ml-1 text-[#4A3A33]/60">{r.unit}</span>
+                        </span>
                       )}
-                      {r.flag && r.flag !== 'Normal' && <span className="text-xs font-bold text-red-500 px-2 py-1 bg-red-50 rounded-full">{r.flag}</span>}
                     </div>
                   </div>
                 </li>
