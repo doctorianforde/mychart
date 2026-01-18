@@ -10,6 +10,27 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+function ProfileImage({ src, alt, className, fallback }: { src?: string | null, alt: string, className?: string, fallback: React.ReactNode }) {
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setError(false);
+  }, [src]);
+
+  if (!src || error) {
+    return <>{fallback}</>;
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => setError(true)}
+    />
+  );
+}
+
 export default function MyChartDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<any>(null);
@@ -54,6 +75,37 @@ export default function MyChartDashboard() {
   // Weight Log State
   const [weightValue, setWeightValue] = useState('');
   const [weightLogMessage, setWeightLogMessage] = useState('');
+
+  const handleProfilePicUpdate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload a valid image file.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size exceeds 5MB limit.');
+      return;
+    }
+
+    try {
+      const targetUid = selectedPatient ? selectedPatient.uid : user.uid;
+      const newPhotoURL = await uploadProfilePicture(file, targetUid);
+      
+      if (selectedPatient) {
+        setSelectedPatient({ ...selectedPatient, photoURL: newPhotoURL });
+      } else {
+        setUserData({ ...userData, photoURL: newPhotoURL });
+      }
+    } catch (err) {
+      console.error("Error updating profile picture:", err);
+      alert("Failed to update profile picture.");
+    }
+  };
 
   const handleHypertensionLog = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -573,7 +625,26 @@ export default function MyChartDashboard() {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setProfilePic(e.target.files ? e.target.files[0] : null)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (!file.type.startsWith('image/')) {
+                          alert('Please upload a valid image file.');
+                          e.target.value = '';
+                          setProfilePic(null);
+                          return;
+                        }
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert('File size exceeds 5MB limit.');
+                          e.target.value = '';
+                          setProfilePic(null);
+                          return;
+                        }
+                        setProfilePic(file);
+                      } else {
+                        setProfilePic(null);
+                      }
+                    }}
                     className="block w-full text-base text-[#4A3A33] file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-base file:font-bold file:bg-[#EFE7DD] file:text-[#4A3A33] hover:file:bg-[#D9A68A]/30 file:transition-all file:cursor-pointer cursor-pointer"
                   />
                 </div>
@@ -642,11 +713,12 @@ export default function MyChartDashboard() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 bg-gradient-to-br from-[#4A3A33] to-[#5e4d44] rounded-2xl flex items-center justify-center overflow-hidden shadow-md ring-2 ring-white">
-                {userData?.photoURL ? (
-                  <img src={userData.photoURL} alt="Profile" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-[#EFE7DD] font-bold text-xl font-['Montserrat']">{user.email?.charAt(0).toUpperCase()}</span>
-                )}
+                <ProfileImage
+                  src={userData?.photoURL}
+                  alt="Profile"
+                  className="h-full w-full object-cover"
+                  fallback={<span className="text-[#EFE7DD] font-bold text-xl font-['Montserrat']">{user.email?.charAt(0).toUpperCase()}</span>}
+                />
               </div>
               <div>
                 <Image src="/blacklogo2.png" alt="MyChart by Alera" width={180} height={45} style={{ objectFit: 'contain' }} priority />
@@ -672,13 +744,34 @@ export default function MyChartDashboard() {
         {(userData?.role === 'patient' || selectedPatient) && (
           <div className="mb-8 p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
             <div className="flex justify-between items-start mb-8">
-              <div>
-                <h2 className="text-3xl font-bold text-[#4A3A33] font-['Montserrat'] mb-1">
-                  {selectedPatient ? selectedPatient.fullName : userData.fullName || 'Patient Profile'}
-                </h2>
-                <p className="text-[#4A3A33]/60 font-medium">
-                  {selectedPatient ? selectedPatient.email : userData.email}
-                </p>
+              <div className="flex items-center gap-6">
+                <div className="relative group h-24 w-24 shrink-0">
+                  <div className="h-full w-full bg-gradient-to-br from-[#4A3A33] to-[#5e4d44] rounded-2xl flex items-center justify-center overflow-hidden shadow-md ring-4 ring-white">
+                    <ProfileImage
+                      src={selectedPatient ? selectedPatient.photoURL : userData.photoURL}
+                      alt="Profile"
+                      className="h-full w-full object-cover"
+                      fallback={<span className="text-[#EFE7DD] font-bold text-4xl font-['Montserrat']">{(selectedPatient ? selectedPatient.email : userData.email)?.charAt(0).toUpperCase()}</span>}
+                    />
+                  </div>
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-2xl">
+                    <span className="text-white text-xs font-bold bg-black/50 px-2 py-1 rounded backdrop-blur-sm">Edit</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleProfilePicUpdate}
+                    />
+                  </label>
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-[#4A3A33] font-['Montserrat'] mb-1">
+                    {selectedPatient ? selectedPatient.fullName : userData.fullName || 'Patient Profile'}
+                  </h2>
+                  <p className="text-[#4A3A33]/60 font-medium">
+                    {selectedPatient ? selectedPatient.email : userData.email}
+                  </p>
+                </div>
               </div>
               {userData?.role === 'staff' && selectedPatient && (
                 <button
