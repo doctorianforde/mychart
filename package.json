@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.90.1",
     "canvg": "^4.0.3",
     "firebase": "^12.8.0",
     "jspdf": "^2.5.2",
