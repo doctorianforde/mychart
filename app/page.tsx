@@ -974,7 +974,7 @@ export default function MyChartDashboard() {
                   <button
                     type="button"
                     onClick={handleSetCurrentTime}
-                    className="absolute top-12 right-4 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-3 py-2 rounded-md hover:bg-[#8AAB88]/10"
+                    className="absolute top-11 right-16 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-3 py-2 rounded-md hover:bg-[#8AAB88]/10"
                   >
                     Now
                   </button>
@@ -1037,7 +1037,7 @@ export default function MyChartDashboard() {
                   <button
                     type="button"
                     onClick={handleSetCurrentTime}
-                    className="absolute top-12 right-4 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-3 py-2 rounded-md hover:bg-[#8AAB88]/10"
+                    className="absolute top-11 right-16 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-3 py-2 rounded-md hover:bg-[#8AAB88]/10"
                   >
                     Now
                   </button>
