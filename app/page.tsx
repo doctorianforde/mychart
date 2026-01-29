@@ -766,7 +766,7 @@ export default function MyChartDashboard() {
 
         {/* Profile Section */}
         {(userData?.role === 'patient' || selectedPatient) && (
-          <div className="mb-8 p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+          <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
             <div className="flex flex-col sm:flex-row justify-between items-start mb-8 gap-4">
               <div className="flex items-center gap-4 sm:gap-6 min-w-0">
                 <div className="relative group h-16 w-16 sm:h-24 sm:w-24 shrink-0">
@@ -854,7 +854,7 @@ export default function MyChartDashboard() {
 
         {/* Booking Section - Only for Patients */}
         {userData?.role === 'patient' && (
-          <div className="mb-8 p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+          <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
             <h2 className="text-2xl font-bold mb-6 text-[#4A3A33] font-['Montserrat']">Book an Appointment</h2>
             <div className="rounded-xl overflow-hidden shadow-md border border-[#D9A68A]/20">
               <iframe
@@ -868,8 +868,8 @@ export default function MyChartDashboard() {
 
         {/* Hypertension Log Section - Only for Patients */}
         {userData?.role === 'patient' && (
-          <div className="mb-8 p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
-            <h2 className="text-3xl font-bold mb-8 text-[#4A3A33] font-['Montserrat']">Log Blood Pressure Reading</h2>
+          <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-[#4A3A33] font-['Montserrat']">Log Blood Pressure Reading</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <form onSubmit={handleHypertensionLog} className="space-y-6">
                 <div>
@@ -883,24 +883,22 @@ export default function MyChartDashboard() {
                   />
                 </div>
                 <div>
-                  <div>
-                    <label className="block text-base font-bold text-[#4A3A33] mb-3">Time of Reading</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="time"
-                        required
-                        value={logTime}
-                        onChange={(e) => setLogTime(e.target.value)}
-                        className="block flex-1 min-w-0 rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSetCurrentTime}
-                        className="shrink-0 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-4 py-2 rounded-xl border-2 border-[#8AAB88]/30 hover:bg-[#8AAB88]/10 transition-all"
-                      >
-                        Now
-                      </button>
-                    </div>
+                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Time of Reading</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="time"
+                      required
+                      value={logTime}
+                      onChange={(e) => setLogTime(e.target.value)}
+                      className="block flex-1 min-w-0 rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSetCurrentTime}
+                      className="shrink-0 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-4 py-2 rounded-xl border-2 border-[#8AAB88]/30 hover:bg-[#8AAB88]/10 transition-all"
+                    >
+                      Now
+                    </button>
                   </div>
                 </div>
                 <div>
@@ -974,8 +972,8 @@ export default function MyChartDashboard() {
 
         {/* Diabetes Log Section - Only for Patients */}
         {userData?.role === 'patient' && (
-          <div className="mb-8 p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
-            <h2 className="text-3xl font-bold mb-8 text-[#4A3A33] font-['Montserrat']">Log Glucose Reading</h2>
+          <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-[#4A3A33] font-['Montserrat']">Log Glucose Reading</h2>
             <form onSubmit={handleDiabetesLog} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-base font-bold text-[#4A3A33] mb-3">Date</label>
@@ -988,19 +986,19 @@ export default function MyChartDashboard() {
                 />
               </div>
               <div>
-                <div className="relative">
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Time of Reading</label>
+                <label className="block text-base font-bold text-[#4A3A33] mb-3">Time of Reading</label>
+                <div className="flex gap-2">
                   <input
                     type="time"
                     required
                     value={logTime}
                     onChange={(e) => setLogTime(e.target.value)}
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
+                    className="block flex-1 min-w-0 rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
                   />
                   <button
                     type="button"
                     onClick={handleSetCurrentTime}
-                    className="absolute top-11 right-16 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-3 py-2 rounded-md hover:bg-[#8AAB88]/10"
+                    className="shrink-0 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-4 py-2 rounded-xl border-2 border-[#8AAB88]/30 hover:bg-[#8AAB88]/10 transition-all"
                   >
                     Now
                   </button>
@@ -1037,8 +1035,8 @@ export default function MyChartDashboard() {
 
         {/* Weight Log Section - Only for Patients */}
         {userData?.role === 'patient' && (
-          <div className="mb-8 p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
-            <h2 className="text-3xl font-bold mb-8 text-[#4A3A33] font-['Montserrat']">Log Weight</h2>
+          <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-[#4A3A33] font-['Montserrat']">Log Weight</h2>
             <form onSubmit={handleWeightLog} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-base font-bold text-[#4A3A33] mb-3">Date</label>
@@ -1051,24 +1049,22 @@ export default function MyChartDashboard() {
                 />
               </div>
               <div>
-                <div>
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Time of Measurement</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="time"
-                      required
-                      value={logTime}
-                      onChange={(e) => setLogTime(e.target.value)}
-                      className="block flex-1 min-w-0 rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSetCurrentTime}
-                      className="shrink-0 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-4 py-2 rounded-xl border-2 border-[#8AAB88]/30 hover:bg-[#8AAB88]/10 transition-all"
-                    >
-                      Now
-                    </button>
-                  </div>
+                <label className="block text-base font-bold text-[#4A3A33] mb-3">Time of Measurement</label>
+                <div className="flex gap-2">
+                  <input
+                    type="time"
+                    required
+                    value={logTime}
+                    onChange={(e) => setLogTime(e.target.value)}
+                    className="block flex-1 min-w-0 rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSetCurrentTime}
+                    className="shrink-0 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-4 py-2 rounded-xl border-2 border-[#8AAB88]/30 hover:bg-[#8AAB88]/10 transition-all"
+                  >
+                    Now
+                  </button>
                 </div>
               </div>
               <div>
