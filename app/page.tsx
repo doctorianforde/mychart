@@ -129,9 +129,13 @@ export default function MyChartDashboard() {
     if (systolicValue > 180 || diastolicValue > 120) {
       flag = 'Hypertensive Crisis';
     } else if (systolicValue >= 140 || diastolicValue >= 90) {
-      flag = 'High';
+      flag = 'Stage 2 High';
+    } else if (systolicValue >= 130 || diastolicValue >= 80) {
+      flag = 'Stage 1 High';
     } else if (systolicValue < 90 || diastolicValue < 60) {
       flag = 'Low';
+    } else if (systolicValue >= 120 && diastolicValue < 80) {
+      flag = 'Elevated';
     }
 
     if (flag === 'Hypertensive Crisis' || flag === 'Low') {
@@ -143,6 +147,26 @@ export default function MyChartDashboard() {
           body: JSON.stringify({
             to: 'office@aleracarecollective.com',
             subject: `ALERT: ${flag} Blood Pressure Reading - ${userData.email}`,
+            text: `
+              Patient: ${userData.email}
+              Contact: ${userData.phoneNumber || 'Not provided'}
+              Reading: ${systolic}/${diastolic} mmHg, Pulse: ${pulse} bpm
+              Time: ${new Date(`${logDate}T${logTime}`).toLocaleString()}
+            `
+          })
+        });
+      } catch (error) {
+        console.error("Failed to send email alert:", error);
+      }
+    } else if (flag === 'Stage 2 High') {
+      alert(`WARNING: Stage 2 High Blood Pressure Reading.\n\nAn alert has been sent to the office.`);
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: 'office@aleracarecollective.com',
+            subject: `WARNING: Stage 2 High Blood Pressure Reading - ${userData.email}`,
             text: `
               Patient: ${userData.email}
               Contact: ${userData.phoneNumber || 'Not provided'}
@@ -743,32 +767,32 @@ export default function MyChartDashboard() {
         {/* Profile Section */}
         {(userData?.role === 'patient' || selectedPatient) && (
           <div className="mb-8 p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
-            <div className="flex justify-between items-start mb-8">
-              <div className="flex items-center gap-6">
-                <div className="relative group h-24 w-24 shrink-0">
+            <div className="flex flex-col sm:flex-row justify-between items-start mb-8 gap-4">
+              <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+                <div className="relative group h-16 w-16 sm:h-24 sm:w-24 shrink-0">
                   <div className="h-full w-full bg-gradient-to-br from-[#4A3A33] to-[#5e4d44] rounded-2xl flex items-center justify-center overflow-hidden shadow-md ring-4 ring-white">
                     <ProfileImage
                       src={selectedPatient ? selectedPatient.photoURL : userData.photoURL}
                       alt="Profile"
                       className="h-full w-full object-cover"
-                      fallback={<span className="text-[#EFE7DD] font-bold text-4xl font-['Montserrat']">{(selectedPatient ? selectedPatient.email : userData.email)?.charAt(0).toUpperCase()}</span>}
+                      fallback={<span className="text-[#EFE7DD] font-bold text-2xl sm:text-4xl font-['Montserrat']">{(selectedPatient ? selectedPatient.email : userData.email)?.charAt(0).toUpperCase()}</span>}
                     />
                   </div>
                   <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-2xl">
                     <span className="text-white text-xs font-bold bg-black/50 px-2 py-1 rounded backdrop-blur-sm">Edit</span>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
                       onChange={handleProfilePicUpdate}
                     />
                   </label>
                 </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-[#4A3A33] font-['Montserrat'] mb-1">
+                <div className="min-w-0">
+                  <h2 className="text-xl sm:text-3xl font-bold text-[#4A3A33] font-['Montserrat'] mb-1 break-words">
                     {selectedPatient ? selectedPatient.fullName : userData.fullName || 'Patient Profile'}
                   </h2>
-                  <p className="text-[#4A3A33]/60 font-medium">
+                  <p className="text-sm sm:text-base text-[#4A3A33]/60 font-medium truncate">
                     {selectedPatient ? selectedPatient.email : userData.email}
                   </p>
                 </div>
@@ -776,7 +800,7 @@ export default function MyChartDashboard() {
               {userData?.role === 'staff' && selectedPatient && (
                 <button
                   onClick={() => setSelectedPatient(null)}
-                  className="text-sm font-semibold text-[#8AAB88] hover:text-[#4A3A33] px-4 py-2 rounded-lg hover:bg-[#8AAB88]/10 transition-all"
+                  className="text-sm font-semibold text-[#8AAB88] hover:text-[#4A3A33] px-4 py-2 rounded-lg hover:bg-[#8AAB88]/10 transition-all shrink-0"
                 >
                   Close Profile
                 </button>
@@ -859,22 +883,24 @@ export default function MyChartDashboard() {
                   />
                 </div>
                 <div>
-                  <div className="relative">
+                  <div>
                     <label className="block text-base font-bold text-[#4A3A33] mb-3">Time of Reading</label>
-                    <input
-                      type="time"
-                      required
-                      value={logTime}
-                      onChange={(e) => setLogTime(e.target.value)}
-                      className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSetCurrentTime}
-                      className="absolute top-11 right-16 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-3 py-2 rounded-md hover:bg-[#8AAB88]/10"
-                    >
-                      Now
-                    </button>
+                    <div className="flex gap-2">
+                      <input
+                        type="time"
+                        required
+                        value={logTime}
+                        onChange={(e) => setLogTime(e.target.value)}
+                        className="block flex-1 min-w-0 rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSetCurrentTime}
+                        className="shrink-0 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-4 py-2 rounded-xl border-2 border-[#8AAB88]/30 hover:bg-[#8AAB88]/10 transition-all"
+                      >
+                        Now
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -1025,22 +1051,24 @@ export default function MyChartDashboard() {
                 />
               </div>
               <div>
-                <div className="relative">
+                <div>
                   <label className="block text-base font-bold text-[#4A3A33] mb-3">Time of Measurement</label>
-                  <input
-                    type="time"
-                    required
-                    value={logTime}
-                    onChange={(e) => setLogTime(e.target.value)}
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSetCurrentTime}
-                    className="absolute top-11 right-16 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-3 py-2 rounded-md hover:bg-[#8AAB88]/10"
-                  >
-                    Now
-                  </button>
+                  <div className="flex gap-2">
+                    <input
+                      type="time"
+                      required
+                      value={logTime}
+                      onChange={(e) => setLogTime(e.target.value)}
+                      className="block flex-1 min-w-0 rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSetCurrentTime}
+                      className="shrink-0 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-4 py-2 rounded-xl border-2 border-[#8AAB88]/30 hover:bg-[#8AAB88]/10 transition-all"
+                    >
+                      Now
+                    </button>
+                  </div>
                 </div>
               </div>
               <div>
@@ -1062,46 +1090,46 @@ export default function MyChartDashboard() {
           </div>
         )}
 
-        <div className="p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
-          <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <h2 className="text-3xl font-bold text-[#4A3A33] font-['Montserrat']">
+        <div className="p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#4A3A33] font-['Montserrat'] mb-4">
               {userData?.role === 'staff' ? 'All Patient Records' : 'Medical Records'}
             </h2>
             {userData?.role === 'staff' && (
-              <div className="flex flex-col md:flex-row items-center gap-4 w-full">
+              <div className="space-y-3">
                 <input
                   type="text"
                   placeholder="Search by email, phone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full md:w-80 rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
+                  className="w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 sm:p-4 text-base text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
                 />
-                <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                <div className="grid grid-cols-2 gap-2">
                   <input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full sm:w-auto rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
+                    className="w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 sm:p-4 text-sm sm:text-base text-[#4A3A33] transition-all"
                     title="Start Date"
                   />
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full sm:w-auto rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
+                    className="w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 sm:p-4 text-sm sm:text-base text-[#4A3A33] transition-all"
                     title="End Date"
                   />
                 </div>
-                <div className="flex gap-2 w-full md:w-auto">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={handleExportPdf}
-                    className="flex-1 py-3.5 px-5 rounded-xl shadow-md text-base font-bold text-white bg-gradient-to-r from-[#D9A68A] to-[#c9906f] hover:from-[#c9906f] hover:to-[#D9A68A] focus:outline-none focus:ring-4 focus:ring-[#D9A68A]/20 transition-all"
+                    className="py-3 px-4 sm:py-3.5 sm:px-5 rounded-xl shadow-md text-sm sm:text-base font-bold text-white bg-gradient-to-r from-[#D9A68A] to-[#c9906f] hover:from-[#c9906f] hover:to-[#D9A68A] focus:outline-none focus:ring-4 focus:ring-[#D9A68A]/20 transition-all"
                   >
                     Export PDF
                   </button>
                   <button
                     onClick={handleExportExcel}
-                    className="flex-1 py-3.5 px-5 rounded-xl shadow-md text-base font-bold text-white bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] hover:from-[#7a9b78] hover:to-[#8AAB88] focus:outline-none focus:ring-4 focus:ring-[#8AAB88]/20 transition-all"
+                    className="py-3 px-4 sm:py-3.5 sm:px-5 rounded-xl shadow-md text-sm sm:text-base font-bold text-white bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] hover:from-[#7a9b78] hover:to-[#8AAB88] focus:outline-none focus:ring-4 focus:ring-[#8AAB88]/20 transition-all"
                   >
                     Export Excel
                   </button>
@@ -1123,50 +1151,64 @@ export default function MyChartDashboard() {
             </div>
           ) : (
             <ul className="space-y-4">
-              {filteredRecords.map((r) => (
-                <li key={r.id} className="p-6 bg-gradient-to-br from-white to-[#EFE7DD]/10 rounded-xl border-2 border-[#D9A68A]/20 hover:border-[#8AAB88] hover:shadow-md transition-all duration-200 text-[#4A3A33]">
-                  <div className="flex justify-between items-center">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="font-bold text-xl">{r.subType || r.type}</span>
+              {filteredRecords.map((r) => {
+                let flagClasses = '';
+                if (r.flag === 'Hypertensive Crisis') {
+                  flagClasses = 'bg-gradient-to-r from-red-600 to-red-700 text-white';
+                } else if (r.flag === 'Low') {
+                  flagClasses = 'bg-gradient-to-r from-blue-500 to-blue-600 text-white';
+                } else if (r.flag === 'Stage 2 High' || r.flag === 'High') {
+                  flagClasses = 'bg-gradient-to-r from-orange-500 to-red-500 text-white';
+                } else if (r.flag === 'Stage 1 High') {
+                  flagClasses = 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white';
+                } else if (r.flag === 'Elevated') {
+                  flagClasses = 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-[#4A3A33]';
+                }
+                return (
+                <li key={r.id} className="p-4 sm:p-6 bg-gradient-to-br from-white to-[#EFE7DD]/10 rounded-xl border-2 border-[#D9A68A]/20 hover:border-[#8AAB88] hover:shadow-md transition-all duration-200 text-[#4A3A33]">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                        <span className="font-bold text-lg sm:text-xl">{r.subType || r.type}</span>
                         {r.flag && r.flag !== 'Normal' && (
-                          <span className="text-sm font-bold text-white px-4 py-1.5 bg-gradient-to-r from-red-500 to-red-600 rounded-full shadow-sm">
+                          <span className={`text-xs sm:text-sm font-bold px-3 py-1 sm:px-4 sm:py-1.5 rounded-full shadow-sm whitespace-nowrap ${flagClasses}`}>
                             {r.flag}
                           </span>
                         )}
                       </div>
-                      <span className="text-base text-[#4A3A33]/70 block font-medium">{new Date(r.readingTime || r.createdAt).toLocaleString()}</span>
+                      <span className="text-sm sm:text-base text-[#4A3A33]/70 block font-medium">{new Date(r.readingTime || r.createdAt).toLocaleString()}</span>
                       {userData?.role === 'staff' && (
                         <>
-                          <span className="text-sm text-[#8AAB88] block mt-3 font-bold">Patient: {r.patientEmail}</span>
+                          <span className="text-sm text-[#8AAB88] block mt-2 sm:mt-3 font-bold truncate">Patient: {r.patientEmail}</span>
                           <button
                             onClick={() => viewPatientProfile(r.patientId)}
-                            className="text-sm text-[#4A3A33] font-bold mt-2 hover:text-[#8AAB88] underline decoration-2 underline-offset-2 py-1"
+                            className="text-sm text-[#4A3A33] font-bold mt-1 sm:mt-2 hover:text-[#8AAB88] underline decoration-2 underline-offset-2 py-1"
                           >
-                            View Profile →
+                            View Profile
                           </button>
                         </>
                       )}
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right shrink-0">
                       {r.type === 'Hypertension Log' ? (
                         <>
-                          <span className="text-3xl font-bold block text-[#4A3A33]">
+                          <span className="text-2xl sm:text-3xl font-bold block text-[#4A3A33]">
                             {r.value.systolic}/{r.value.diastolic}
-                            <span className="text-base font-normal ml-2 text-[#4A3A33]/60">{r.unit}</span>
+                            <span className="text-sm sm:text-base font-normal ml-2 text-[#4A3A33]/60">{r.unit}</span>
                           </span>
-                          <span className="text-base text-[#4A3A33]/70 mt-2 block font-medium">Pulse: {r.value.pulse} bpm</span>
+                          <span className="text-sm sm:text-base text-[#4A3A33]/70 mt-1 sm:mt-2 block font-medium">Pulse: {r.value.pulse} bpm</span>
                         </>
                       ) : (
-                        <span className="text-3xl font-bold block text-[#4A3A33]">
+                        <span className="text-2xl sm:text-3xl font-bold block text-[#4A3A33]">
                           {r.value}
-                          <span className="text-base font-normal ml-2 text-[#4A3A33]/60">{r.unit}</span>
+                          <span className="text-sm sm:text-base font-normal ml-2 text-[#4A3A33]/60">{r.unit}</span>
                         </span>
                       )}
                     </div>
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </div>
