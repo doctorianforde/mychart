@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { collection, query, where, getDocs, addDoc, getDoc, doc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '@/src/lib/firebase';
+import { collection, query, where, getDocs, addDoc, getDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { auth, db, storage } from '@/src/lib/firebase';
 import { login, loginWithGoogle, register, uploadProfilePicture } from '@/src/lib/authService';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -75,6 +76,49 @@ export default function MyChartDashboard() {
   // Weight Log State
   const [weightValue, setWeightValue] = useState('');
   const [weightLogMessage, setWeightLogMessage] = useState('');
+
+  // Lab Results State
+  const [labResults, setLabResults] = useState<any[]>([]);
+  const [labFile, setLabFile] = useState<File | null>(null);
+  const [labDescription, setLabDescription] = useState('');
+  const [labUploadMessage, setLabUploadMessage] = useState('');
+  const [labUploading, setLabUploading] = useState(false);
+  const [labUploadProgress, setLabUploadProgress] = useState(0);
+
+  // Referrals State
+  const [referrals, setReferrals] = useState<any[]>([]);
+  const [referralFile, setReferralFile] = useState<File | null>(null);
+  const [referralDescription, setReferralDescription] = useState('');
+  const [referralUploadMessage, setReferralUploadMessage] = useState('');
+  const [referralUploading, setReferralUploading] = useState(false);
+  const [referralUploadProgress, setReferralUploadProgress] = useState(0);
+
+  // Staff Patient Selector (for uploads)
+  const [patientList, setPatientList] = useState<any[]>([]);
+  const [selectedUploadPatientId, setSelectedUploadPatientId] = useState('');
+  const [selectedUploadPatientEmail, setSelectedUploadPatientEmail] = useState('');
+
+  // File upload constraints
+  const ALLOWED_FILE_TYPES = [
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+  const validateFile = (file: File): string | null => {
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      return 'Invalid file type. Accepted: PDF, JPG, PNG, GIF, WebP, DOC, DOCX';
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return 'File size exceeds 10MB limit.';
+    }
+    return null;
+  };
 
   const handleProfilePicUpdate = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -269,6 +313,49 @@ export default function MyChartDashboard() {
           const querySnapshot = await getDocs(q);
           const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           setRecords(data);
+
+          // Fetch patient list for staff (for upload patient selector)
+          if (currentRole === 'staff') {
+            try {
+              const patientsQuery = query(collection(db, "users"), where("role", "==", "patient"));
+              const patientsSnapshot = await getDocs(patientsQuery);
+              const patients = patientsSnapshot.docs.map(d => ({
+                uid: d.id,
+                email: d.data().email,
+                fullName: d.data().fullName || '',
+              }));
+              patients.sort((a, b) => (a.fullName || a.email).localeCompare(b.fullName || b.email));
+              setPatientList(patients);
+            } catch (err) {
+              console.error("Error fetching patient list:", err);
+            }
+          }
+
+          // Fetch lab results
+          try {
+            const labQuery = currentRole === 'staff'
+              ? query(collection(db, "labResults"))
+              : query(collection(db, "labResults"), where("patientId", "==", currentUser.uid));
+            const labSnapshot = await getDocs(labQuery);
+            const labData = labSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            labData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setLabResults(labData);
+          } catch (err) {
+            console.error("Error fetching lab results:", err);
+          }
+
+          // Fetch referrals
+          try {
+            const refQuery = currentRole === 'staff'
+              ? query(collection(db, "referrals"))
+              : query(collection(db, "referrals"), where("patientId", "==", currentUser.uid));
+            const refSnapshot = await getDocs(refQuery);
+            const refData = refSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            refData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setReferrals(refData);
+          } catch (err) {
+            console.error("Error fetching referrals:", err);
+          }
         } catch (error) {
           console.error("Error fetching records:", error);
         }
@@ -405,6 +492,126 @@ export default function MyChartDashboard() {
     } catch (err) {
       console.error("Error logging weight", err);
       setWeightLogMessage('Failed to log weight.');
+    }
+  };
+
+  const handleFileUpload = async (
+    e: React.FormEvent,
+    collectionName: 'labResults' | 'referrals',
+    file: File | null,
+    description: string,
+    setUploading: (v: boolean) => void,
+    setProgress: (v: number) => void,
+    setMessage: (v: string) => void,
+    setFile: (v: File | null) => void,
+    setDesc: (v: string) => void,
+    currentList: any[],
+    setList: (v: any[]) => void,
+  ) => {
+    e.preventDefault();
+    if (!user || !userData) return;
+
+    let targetPatientId: string;
+    let targetPatientEmail: string;
+
+    if (userData.role === 'staff') {
+      if (!selectedUploadPatientId) {
+        setMessage('Please select a patient.');
+        return;
+      }
+      targetPatientId = selectedUploadPatientId;
+      targetPatientEmail = selectedUploadPatientEmail;
+    } else {
+      targetPatientId = user.uid;
+      targetPatientEmail = user.email || '';
+    }
+
+    if (!file) {
+      setMessage('Please select a file to upload.');
+      return;
+    }
+
+    const validationError = validateFile(file);
+    if (validationError) {
+      setMessage(validationError);
+      return;
+    }
+
+    setUploading(true);
+    setProgress(0);
+    setMessage('');
+
+    try {
+      const timestamp = Date.now();
+      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storagePath = `${collectionName}/${targetPatientId}/${timestamp}_${sanitizedFileName}`;
+      const storageRef = ref(storage, storagePath);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      const fileURL: string = await new Promise((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const pct = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setProgress(Math.round(pct));
+          },
+          (error) => reject(error),
+          async () => {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(url);
+          }
+        );
+      });
+
+      const metadata = {
+        patientId: targetPatientId,
+        patientEmail: targetPatientEmail,
+        uploadedBy: user.uid,
+        uploaderRole: userData.role,
+        uploaderEmail: user.email,
+        fileName: file.name,
+        fileURL,
+        filePath: storagePath,
+        description: description.trim(),
+        fileType: file.type,
+        fileSize: file.size,
+        createdAt: new Date().toISOString(),
+      };
+
+      const docRef = await addDoc(collection(db, collectionName), metadata);
+      setList([{ id: docRef.id, ...metadata }, ...currentList]);
+      setMessage('File uploaded successfully!');
+      setFile(null);
+      setDesc('');
+      setProgress(0);
+
+      // Reset file input
+      const fileInputs = document.querySelectorAll(`input[data-upload="${collectionName}"]`);
+      fileInputs.forEach((input: any) => { input.value = ''; });
+    } catch (error) {
+      console.error(`Error uploading to ${collectionName}:`, error);
+      setMessage('Failed to upload file. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileDelete = async (
+    docId: string,
+    filePath: string,
+    collectionName: 'labResults' | 'referrals',
+    currentList: any[],
+    setList: (v: any[]) => void,
+  ) => {
+    if (!confirm('Are you sure you want to delete this file?')) return;
+    try {
+      const storageRef = ref(storage, filePath);
+      await deleteObject(storageRef);
+      await deleteDoc(doc(db, collectionName, docId));
+      setList(currentList.filter(item => item.id !== docId));
+    } catch (error) {
+      console.error(`Error deleting from ${collectionName}:`, error);
+      alert('Failed to delete file. Please try again.');
     }
   };
 
@@ -1085,6 +1292,286 @@ export default function MyChartDashboard() {
             {weightLogMessage && <p className="mt-4 text-base text-[#8AAB88] font-bold">{weightLogMessage}</p>}
           </div>
         )}
+
+        {/* Lab Results Section - Both Roles */}
+        <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-[#4A3A33] font-['Montserrat']">Lab Results</h2>
+
+          <form
+            onSubmit={(e) => handleFileUpload(e, 'labResults', labFile, labDescription, setLabUploading, setLabUploadProgress, setLabUploadMessage, setLabFile, setLabDescription, labResults, setLabResults)}
+            className="space-y-6 mb-8"
+          >
+            {userData?.role === 'staff' && (
+              <div>
+                <label className="block text-base font-bold text-[#4A3A33] mb-3">Select Patient</label>
+                <select
+                  required
+                  value={selectedUploadPatientId}
+                  onChange={(e) => {
+                    const selected = patientList.find(p => p.uid === e.target.value);
+                    setSelectedUploadPatientId(e.target.value);
+                    setSelectedUploadPatientEmail(selected?.email || '');
+                  }}
+                  className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all cursor-pointer"
+                >
+                  <option value="">-- Select a patient --</option>
+                  {patientList.map(p => (
+                    <option key={p.uid} value={p.uid}>
+                      {p.fullName ? `${p.fullName} (${p.email})` : p.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-base font-bold text-[#4A3A33] mb-3">Upload Lab Result</label>
+              <input
+                type="file"
+                data-upload="labResults"
+                accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  if (file) {
+                    const error = validateFile(file);
+                    if (error) {
+                      alert(error);
+                      e.target.value = '';
+                      setLabFile(null);
+                      return;
+                    }
+                  }
+                  setLabFile(file);
+                }}
+                className="block w-full text-base text-[#4A3A33] file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-base file:font-bold file:bg-[#EFE7DD] file:text-[#4A3A33] hover:file:bg-[#D9A68A]/30 file:transition-all file:cursor-pointer cursor-pointer"
+              />
+              <p className="text-xs text-[#4A3A33]/50 mt-1">Accepted: PDF, JPG, PNG, GIF, WebP, DOC, DOCX. Max size: 10MB</p>
+            </div>
+
+            <div>
+              <label className="block text-base font-bold text-[#4A3A33] mb-3">Description (optional)</label>
+              <input
+                type="text"
+                placeholder="e.g. Blood work results from Jan 2026"
+                value={labDescription}
+                onChange={(e) => setLabDescription(e.target.value)}
+                className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
+              />
+            </div>
+
+            {labUploading && (
+              <div className="w-full bg-[#EFE7DD] rounded-full h-3">
+                <div
+                  className="bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] h-3 rounded-full transition-all duration-300"
+                  style={{ width: `${labUploadProgress}%` }}
+                />
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={labUploading}
+              className="w-full py-4 px-8 rounded-xl shadow-md text-lg font-bold text-white bg-gradient-to-r from-[#4A3A33] to-[#5e4d44] hover:from-[#3a2e28] hover:to-[#4A3A33] focus:outline-none focus:ring-4 focus:ring-[#4A3A33]/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {labUploading ? `Uploading... ${labUploadProgress}%` : 'Upload Lab Result'}
+            </button>
+
+            {labUploadMessage && (
+              <p className={`text-base font-bold ${labUploadMessage.includes('success') ? 'text-[#8AAB88]' : 'text-red-500'}`}>
+                {labUploadMessage}
+              </p>
+            )}
+          </form>
+
+          {labResults.length === 0 ? (
+            <div className="text-center py-12 bg-gradient-to-br from-[#EFE7DD]/40 to-[#f7f2ea]/20 rounded-xl border-2 border-dashed border-[#D9A68A]/40">
+              <p className="text-[#4A3A33]/70 font-medium">No lab results uploaded yet.</p>
+            </div>
+          ) : (
+            <ul className="space-y-4">
+              {labResults.map((item) => (
+                <li key={item.id} className="p-4 sm:p-6 bg-gradient-to-br from-white to-[#EFE7DD]/10 rounded-xl border-2 border-[#D9A68A]/20 hover:border-[#8AAB88] hover:shadow-md transition-all duration-200 text-[#4A3A33]">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#8AAB88]/20 text-[#4A3A33]">
+                          {item.fileType?.includes('pdf') ? 'PDF' : item.fileType?.includes('image') ? 'IMAGE' : 'DOC'}
+                        </span>
+                        <span className="font-bold text-lg truncate">{item.fileName}</span>
+                      </div>
+                      {item.description && (
+                        <p className="text-sm text-[#4A3A33]/70 mb-1">{item.description}</p>
+                      )}
+                      <p className="text-sm text-[#4A3A33]/60 font-medium">{new Date(item.createdAt).toLocaleString()}</p>
+                      <p className="text-xs text-[#4A3A33]/50 mt-1">Uploaded by: {item.uploaderEmail} ({item.uploaderRole})</p>
+                      {userData?.role === 'staff' && (
+                        <p className="text-sm text-[#8AAB88] font-bold mt-1">Patient: {item.patientEmail}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <a
+                        href={item.fileURL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-5 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] hover:from-[#7a9b78] hover:to-[#8AAB88] rounded-xl transition-all shadow-md hover:shadow-lg"
+                      >
+                        View / Download
+                      </a>
+                      {(userData?.role === 'staff' || item.uploadedBy === user?.uid) && (
+                        <button
+                          onClick={() => handleFileDelete(item.id, item.filePath, 'labResults', labResults, setLabResults)}
+                          className="px-4 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-xl transition-all shadow-md"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Referrals Section - Both Roles */}
+        <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-[#4A3A33] font-['Montserrat']">Referrals</h2>
+
+          <form
+            onSubmit={(e) => handleFileUpload(e, 'referrals', referralFile, referralDescription, setReferralUploading, setReferralUploadProgress, setReferralUploadMessage, setReferralFile, setReferralDescription, referrals, setReferrals)}
+            className="space-y-6 mb-8"
+          >
+            {userData?.role === 'staff' && (
+              <div>
+                <label className="block text-base font-bold text-[#4A3A33] mb-3">Select Patient</label>
+                <select
+                  required
+                  value={selectedUploadPatientId}
+                  onChange={(e) => {
+                    const selected = patientList.find(p => p.uid === e.target.value);
+                    setSelectedUploadPatientId(e.target.value);
+                    setSelectedUploadPatientEmail(selected?.email || '');
+                  }}
+                  className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all cursor-pointer"
+                >
+                  <option value="">-- Select a patient --</option>
+                  {patientList.map(p => (
+                    <option key={p.uid} value={p.uid}>
+                      {p.fullName ? `${p.fullName} (${p.email})` : p.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-base font-bold text-[#4A3A33] mb-3">Upload Referral</label>
+              <input
+                type="file"
+                data-upload="referrals"
+                accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  if (file) {
+                    const error = validateFile(file);
+                    if (error) {
+                      alert(error);
+                      e.target.value = '';
+                      setReferralFile(null);
+                      return;
+                    }
+                  }
+                  setReferralFile(file);
+                }}
+                className="block w-full text-base text-[#4A3A33] file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-base file:font-bold file:bg-[#EFE7DD] file:text-[#4A3A33] hover:file:bg-[#D9A68A]/30 file:transition-all file:cursor-pointer cursor-pointer"
+              />
+              <p className="text-xs text-[#4A3A33]/50 mt-1">Accepted: PDF, JPG, PNG, GIF, WebP, DOC, DOCX. Max size: 10MB</p>
+            </div>
+
+            <div>
+              <label className="block text-base font-bold text-[#4A3A33] mb-3">Description (optional)</label>
+              <input
+                type="text"
+                placeholder="e.g. Cardiology referral from Dr. Smith"
+                value={referralDescription}
+                onChange={(e) => setReferralDescription(e.target.value)}
+                className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
+              />
+            </div>
+
+            {referralUploading && (
+              <div className="w-full bg-[#EFE7DD] rounded-full h-3">
+                <div
+                  className="bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] h-3 rounded-full transition-all duration-300"
+                  style={{ width: `${referralUploadProgress}%` }}
+                />
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={referralUploading}
+              className="w-full py-4 px-8 rounded-xl shadow-md text-lg font-bold text-white bg-gradient-to-r from-[#4A3A33] to-[#5e4d44] hover:from-[#3a2e28] hover:to-[#4A3A33] focus:outline-none focus:ring-4 focus:ring-[#4A3A33]/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {referralUploading ? `Uploading... ${referralUploadProgress}%` : 'Upload Referral'}
+            </button>
+
+            {referralUploadMessage && (
+              <p className={`text-base font-bold ${referralUploadMessage.includes('success') ? 'text-[#8AAB88]' : 'text-red-500'}`}>
+                {referralUploadMessage}
+              </p>
+            )}
+          </form>
+
+          {referrals.length === 0 ? (
+            <div className="text-center py-12 bg-gradient-to-br from-[#EFE7DD]/40 to-[#f7f2ea]/20 rounded-xl border-2 border-dashed border-[#D9A68A]/40">
+              <p className="text-[#4A3A33]/70 font-medium">No referrals uploaded yet.</p>
+            </div>
+          ) : (
+            <ul className="space-y-4">
+              {referrals.map((item) => (
+                <li key={item.id} className="p-4 sm:p-6 bg-gradient-to-br from-white to-[#EFE7DD]/10 rounded-xl border-2 border-[#D9A68A]/20 hover:border-[#8AAB88] hover:shadow-md transition-all duration-200 text-[#4A3A33]">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#D9A68A]/20 text-[#4A3A33]">
+                          {item.fileType?.includes('pdf') ? 'PDF' : item.fileType?.includes('image') ? 'IMAGE' : 'DOC'}
+                        </span>
+                        <span className="font-bold text-lg truncate">{item.fileName}</span>
+                      </div>
+                      {item.description && (
+                        <p className="text-sm text-[#4A3A33]/70 mb-1">{item.description}</p>
+                      )}
+                      <p className="text-sm text-[#4A3A33]/60 font-medium">{new Date(item.createdAt).toLocaleString()}</p>
+                      <p className="text-xs text-[#4A3A33]/50 mt-1">Uploaded by: {item.uploaderEmail} ({item.uploaderRole})</p>
+                      {userData?.role === 'staff' && (
+                        <p className="text-sm text-[#8AAB88] font-bold mt-1">Patient: {item.patientEmail}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <a
+                        href={item.fileURL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-5 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] hover:from-[#7a9b78] hover:to-[#8AAB88] rounded-xl transition-all shadow-md hover:shadow-lg"
+                      >
+                        View / Download
+                      </a>
+                      {(userData?.role === 'staff' || item.uploadedBy === user?.uid) && (
+                        <button
+                          onClick={() => handleFileDelete(item.id, item.filePath, 'referrals', referrals, setReferrals)}
+                          className="px-4 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-xl transition-all shadow-md"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         <div className="p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
           <div className="mb-6 sm:mb-8">
