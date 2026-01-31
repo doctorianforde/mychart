@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { collection, query, where, getDocs, addDoc, getDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { auth, db, storage } from '@/src/lib/firebase';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { auth, db } from '@/src/lib/firebase';
 import { login, loginWithGoogle, register, uploadProfilePicture } from '@/src/lib/authService';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -542,6 +542,7 @@ export default function MyChartDashboard() {
     setMessage('');
 
     try {
+      const storage = getStorage();
       const timestamp = Date.now();
       const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const storagePath = `${collectionName}/${targetPatientId}/${timestamp}_${sanitizedFileName}`;
@@ -605,6 +606,7 @@ export default function MyChartDashboard() {
   ) => {
     if (!confirm('Are you sure you want to delete this file?')) return;
     try {
+      const storage = getStorage();
       const storageRef = ref(storage, filePath);
       await deleteObject(storageRef);
       await deleteDoc(doc(db, collectionName, docId));
