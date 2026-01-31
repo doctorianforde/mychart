@@ -1,14 +1,43 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Helper to check if user is staff (requires reading Firestore from Storage rules, 
+
+    // Helper to check if user is staff (requires reading Firestore from Storage rules,
     // or using Custom Claims. For simplicity, we allow authenticated users to upload to their own path)
-    
+
     match /profile_pictures/{userId} {
       // Allow write if it's the user's own file OR if the requester is staff (logic handled in app)
       // Note: Storage rules don't easily read Firestore data without setup, so we stick to ownership here.
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Lab Results files - path: labResults/{patientId}/{fileName}
+    // Firestore rules handle document-level access control; Storage enforces file constraints
+    match /labResults/{patientId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.resource.size < 10 * 1024 * 1024
+        && (
+          request.resource.contentType.matches('application/pdf')
+          || request.resource.contentType.matches('image/.*')
+          || request.resource.contentType.matches('application/msword')
+          || request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        );
+      allow delete: if request.auth != null;
+    }
+
+    // Referrals files - path: referrals/{patientId}/{fileName}
+    match /referrals/{patientId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.resource.size < 10 * 1024 * 1024
+        && (
+          request.resource.contentType.matches('application/pdf')
+          || request.resource.contentType.matches('image/.*')
+          || request.resource.contentType.matches('application/msword')
+          || request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        );
+      allow delete: if request.auth != null;
     }
   }
 }
