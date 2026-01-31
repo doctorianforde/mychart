@@ -547,22 +547,11 @@ export default function MyChartDashboard() {
       const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const storagePath = `${collectionName}/${targetPatientId}/${timestamp}_${sanitizedFileName}`;
       const storageRef = ref(storage, storagePath);
-      const uploadTask = uploadBytesResumable(storageRef, file);
 
-      const fileURL: string = await new Promise((resolve, reject) => {
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            const pct = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setProgress(Math.round(pct));
-          },
-          (error) => reject(error),
-          async () => {
-            const url = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve(url);
-          }
-        );
-      });
+      // Upload file and get download URL
+      const snapshot = await uploadBytesResumable(storageRef, file);
+      setProgress(100);
+      const fileURL = await getDownloadURL(snapshot.ref);
 
       const metadata = {
         patientId: targetPatientId,
@@ -589,9 +578,9 @@ export default function MyChartDashboard() {
       // Reset file input
       const fileInputs = document.querySelectorAll(`input[data-upload="${collectionName}"]`);
       fileInputs.forEach((input: any) => { input.value = ''; });
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error uploading to ${collectionName}:`, error);
-      setMessage('Failed to upload file. Please try again.');
+      setMessage(`Upload failed: ${error?.code || error?.message || 'Unknown error'}. Please try again.`);
     } finally {
       setUploading(false);
     }
