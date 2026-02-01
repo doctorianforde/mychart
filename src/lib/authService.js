@@ -1,9 +1,10 @@
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signOut,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  sendPasswordResetEmail
 } from "firebase/auth";
 import { 
   doc, 
@@ -63,6 +64,10 @@ export const loginWithGoogle = async () => {
 };
 
 export const logout = () => signOut(auth);
+
+export const resetPassword = async (email) => {
+  await sendPasswordResetEmail(auth, email);
+};
 
 // --- Profile Section (Staff) ---
 
