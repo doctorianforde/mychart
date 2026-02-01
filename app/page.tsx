@@ -6,7 +6,7 @@ import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { collection, query, where, getDocs, addDoc, getDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { auth, db } from '@/src/lib/firebase';
-import { login, loginWithGoogle, register, uploadProfilePicture } from '@/src/lib/authService';
+import { login, loginWithGoogle, register, uploadProfilePicture, resetPassword } from '@/src/lib/authService';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -52,6 +52,8 @@ export default function MyChartDashboard() {
   const [profilePic, setProfilePic] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -275,6 +277,22 @@ export default function MyChartDashboard() {
       }
     } catch (err: any) {
       setError(err.message || 'Authentication failed.');
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setResetMessage('');
+    if (!email) {
+      setError('Please enter your email address.');
+      return;
+    }
+    try {
+      await resetPassword(email);
+      setResetMessage('Password reset email sent! Check your inbox.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset email.');
     }
   };
 
@@ -738,7 +756,7 @@ export default function MyChartDashboard() {
                 <Image src="/blacklogo2.png" alt="MyChart by Alera" width={200} height={50} style={{ objectFit: 'contain' }} priority />
               </div>
               <h2 className="text-sm font-medium text-[#4A3A33]/70 tracking-wide">
-                {isRegistering ? 'Create your new account' : 'Sign in to access your records'}
+                {isForgotPassword ? 'Reset your password' : isRegistering ? 'Create your new account' : 'Sign in to access your records'}
               </h2>
             </div>
 
@@ -748,6 +766,41 @@ export default function MyChartDashboard() {
             </div>
           )}
 
+          {resetMessage && (
+            <div className="mb-6 bg-gradient-to-r from-green-50 to-green-50/50 border-l-4 border-[#8AAB88] p-4 rounded-lg shadow-sm">
+              <p className="text-sm font-medium text-[#4A3A33]">{resetMessage}</p>
+            </div>
+          )}
+
+          {isForgotPassword ? (
+            <form className="space-y-6" onSubmit={handleForgotPassword}>
+              <div>
+                <label htmlFor="reset-email" className="block text-base font-bold text-[#4A3A33] mb-3">Email address</label>
+                <input
+                  id="reset-email"
+                  type="email"
+                  required
+                  className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-base p-4 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <button type="submit" className="w-full flex justify-center py-4 px-8 rounded-xl shadow-md text-lg font-bold text-white bg-gradient-to-r from-[#4A3A33] to-[#5e4d44] hover:from-[#3a2e28] hover:to-[#4A3A33] focus:outline-none focus:ring-4 focus:ring-[#4A3A33]/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                Send Reset Link
+              </button>
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => { setIsForgotPassword(false); setError(''); setResetMessage(''); }}
+                  className="text-base font-bold text-[#8AAB88] hover:text-[#4A3A33] underline decoration-2 underline-offset-4 transition-colors py-2 px-4"
+                >
+                  Back to Sign In
+                </button>
+              </div>
+            </form>
+          ) : (
+          <>
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-5">
               <div>
@@ -889,6 +942,18 @@ export default function MyChartDashboard() {
             <button type="submit" className="w-full flex justify-center py-4 px-8 rounded-xl shadow-md text-lg font-bold text-white bg-gradient-to-r from-[#4A3A33] to-[#5e4d44] hover:from-[#3a2e28] hover:to-[#4A3A33] focus:outline-none focus:ring-4 focus:ring-[#4A3A33]/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
               {isRegistering ? 'Create Account' : 'Sign In'}
             </button>
+
+            {!isRegistering && (
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => { setIsForgotPassword(true); setError(''); setResetMessage(''); }}
+                  className="text-sm font-bold text-[#D9A68A] hover:text-[#4A3A33] underline decoration-2 underline-offset-4 transition-colors py-2 px-4"
+                >
+                  Forgot your password?
+                </button>
+              </div>
+            )}
           </form>
 
           <div className="relative my-8">
@@ -921,6 +986,9 @@ export default function MyChartDashboard() {
               {isRegistering ? 'Already have an account? Sign in' : 'Need an account? Register'}
             </button>
           </div>
+          </>
+          )}
+
           </div>
         </div>
       </main>
