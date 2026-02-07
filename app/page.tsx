@@ -1012,7 +1012,7 @@ export default function MyChartDashboard() {
               </div>
               <div className="text-center md:text-left">
                 <Image src="/blacklogo2.png" alt="MyChart by Alera" width={180} height={45} style={{ objectFit: 'contain' }} priority />
-                <p className="text-sm md:text-xs text-[#4A3A33]/60 mt-0.5 font-medium">Patient Portal</p>
+                <p className="text-base md:text-xs text-[#4A3A33]/60 mt-0.5 font-medium">Patient Portal</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
