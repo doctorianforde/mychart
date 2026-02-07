@@ -1000,6 +1000,12 @@ export default function MyChartDashboard() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8 bg-white/90 backdrop-blur-sm p-5 rounded-2xl shadow-lg border border-white/60">
+          {/* Centered Patient Portal Title */}
+          <div className="text-center mb-6">
+            <h1 className="text-xl md:text-2xl font-semibold text-[#4A3A33] font-['Montserrat']">Patient Portal</h1>
+          </div>
+
+          {/* Profile and Sign Out Row */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 bg-gradient-to-br from-[#4A3A33] to-[#5e4d44] rounded-2xl flex items-center justify-center overflow-hidden shadow-md ring-2 ring-white">
@@ -1012,7 +1018,6 @@ export default function MyChartDashboard() {
               </div>
               <div className="text-center md:text-left">
                 <Image src="/blacklogo2.png" alt="MyChart by Alera" width={180} height={45} style={{ objectFit: 'contain' }} priority />
-                <p className="text-base md:text-xs text-[#4A3A33]/60 mt-0.5 font-medium">Patient Portal</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
