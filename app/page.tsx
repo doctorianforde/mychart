@@ -1010,9 +1010,9 @@ export default function MyChartDashboard() {
                   fallback={<span className="text-[#EFE7DD] font-bold text-xl font-['Montserrat']">{user.email?.charAt(0).toUpperCase()}</span>}
                 />
               </div>
-              <div>
+              <div className="text-center md:text-left">
                 <Image src="/blacklogo2.png" alt="MyChart by Alera" width={180} height={45} style={{ objectFit: 'contain' }} priority />
-                <p className="text-xs text-[#4A3A33]/60 mt-0.5 font-medium">Patient Portal</p>
+                <p className="text-sm md:text-xs text-[#4A3A33]/60 mt-0.5 font-medium">Patient Portal</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -1145,7 +1145,7 @@ export default function MyChartDashboard() {
                     required
                     value={logDate}
                     onChange={(e) => setLogDate(e.target.value)}
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
+                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-2 sm:p-4 text-sm sm:text-base text-[#4A3A33] transition-all"
                   />
                 </div>
                 <div>
@@ -1248,7 +1248,7 @@ export default function MyChartDashboard() {
                   required
                   value={logDate}
                   onChange={(e) => setLogDate(e.target.value)}
-                  className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
+                  className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-2 sm:p-4 text-sm sm:text-base text-[#4A3A33] transition-all"
                 />
               </div>
               <div>
@@ -1311,7 +1311,7 @@ export default function MyChartDashboard() {
                   required
                   value={logDate}
                   onChange={(e) => setLogDate(e.target.value)}
-                  className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
+                  className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-2 sm:p-4 text-sm sm:text-base text-[#4A3A33] transition-all"
                 />
               </div>
               <div>
