@@ -97,7 +97,7 @@ export default function TermsOfService() {
                 <li><strong>Account Security:</strong> Maintain the confidentiality of your login credentials and not share your account with others</li>
                 <li><strong>Accurate Information:</strong> Provide accurate and truthful health information</li>
                 <li><strong>Appropriate Use:</strong> Use the Service only for lawful purposes and in accordance with these Terms</li>
-                <li><strong>Emergency Care:</strong> Understand that this portal is not for emergency communications. Call 911 for emergencies</li>
+                <li><strong>Emergency Care:</strong> Understand that this portal is not for emergency communications. Call 811 for emergencies</li>
                 <li><strong>Compliance:</strong> Follow all instructions and guidelines provided by your healthcare providers</li>
               </ul>
             </section>
@@ -106,7 +106,7 @@ export default function TermsOfService() {
             <section className="bg-[#FEE2E2] border-l-4 border-[#EF4444] p-4 rounded-lg">
               <h2 className="text-xl font-semibold mb-2 text-[#4A3A33] font-['Montserrat']">⚠️ Emergency Notice</h2>
               <p className="leading-relaxed font-semibold">
-                This service is NOT for medical emergencies. If you are experiencing a medical emergency, call 911 immediately or go to your nearest emergency room.
+                This service is NOT for medical emergencies. If you are experiencing a medical emergency, call 811 immediately or go to your nearest emergency room.
               </p>
             </section>
 
