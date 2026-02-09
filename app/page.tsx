@@ -987,6 +987,28 @@ export default function MyChartDashboard() {
               {isRegistering ? 'Already have an account? Sign in' : 'Need an account? Register'}
             </button>
           </div>
+
+          {/* Legal Links Footer */}
+          <div className="mt-8 pt-6 border-t border-[#D9A68A]/30">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm">
+              <Link
+                href="/tos"
+                className="text-[#4A3A33]/70 hover:text-[#8AAB88] font-medium underline decoration-2 underline-offset-2"
+              >
+                Terms of Service
+              </Link>
+              <span className="hidden sm:inline text-[#4A3A33]/40">•</span>
+              <Link
+                href="/privacy"
+                className="text-[#4A3A33]/70 hover:text-[#8AAB88] font-medium underline decoration-2 underline-offset-2"
+              >
+                Privacy Policy
+              </Link>
+            </div>
+            <p className="text-center text-xs text-[#4A3A33]/60 mt-4">
+              © {new Date().getFullYear()} Alera Care Collective. All rights reserved.
+            </p>
+          </div>
           </>
           )}
 
