@@ -185,6 +185,32 @@ export default function LoginPage() {
             {isRegistering ? 'Already have an account? Sign in' : 'Need an account? Register'}
           </button>
         </div>
+
+        {/* Legal Links */}
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm">
+            <a
+              href="/tos"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-600 hover:text-indigo-600 underline"
+            >
+              Terms of Service
+            </a>
+            <span className="hidden sm:inline text-gray-400">•</span>
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-600 hover:text-indigo-600 underline"
+            >
+              Privacy Policy
+            </a>
+          </div>
+          <p className="text-center text-xs text-gray-500 mt-3">
+            © {new Date().getFullYear()} Alera Care Collective. All rights reserved.
+          </p>
+        </div>
       </div>
     </div>
   );
