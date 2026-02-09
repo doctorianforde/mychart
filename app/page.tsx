@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { collection, query, where, getDocs, addDoc, getDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -1758,6 +1759,27 @@ export default function MyChartDashboard() {
               })}
             </ul>
           )}
+        </div>
+
+        {/* Footer with Links to Legal Pages */}
+        <div className="mt-12 mb-8 bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/60">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/tos"
+              className="px-6 py-3 text-sm font-semibold text-[#4A3A33] bg-white border-2 border-[#D9A68A] hover:bg-[#EFE7DD] rounded-xl transition-all shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
+            >
+              Terms of Service
+            </Link>
+            <Link
+              href="/privacy"
+              className="px-6 py-3 text-sm font-semibold text-[#4A3A33] bg-white border-2 border-[#D9A68A] hover:bg-[#EFE7DD] rounded-xl transition-all shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
+            >
+              Privacy Policy
+            </Link>
+          </div>
+          <p className="text-center text-xs text-[#4A3A33]/60 mt-4">
+            © {new Date().getFullYear()} Alera Care Collective. All rights reserved.
+          </p>
         </div>
       </div>
     </main>
