@@ -1001,9 +1001,10 @@ export default function MyChartDashboard() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8 bg-white/90 backdrop-blur-sm p-5 rounded-2xl shadow-lg border border-white/60">
-          {/* Centered Patient Portal Title */}
+          {/* Centered App Title */}
           <div className="text-center mb-6">
-            <h1 className="text-xl md:text-2xl font-semibold text-[#4A3A33] font-['Montserrat']">Patient Portal</h1>
+            <h1 className="text-xl md:text-2xl font-semibold text-[#4A3A33] font-['Montserrat']">MyChart by Alera</h1>
+            <p className="text-sm md:text-base text-[#4A3A33]/70 mt-1">Patient Portal</p>
           </div>
 
           {/* Profile and Sign Out Row */}
