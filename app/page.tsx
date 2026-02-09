@@ -756,6 +756,12 @@ export default function MyChartDashboard() {
               <div className="flex justify-center mb-6">
                 <Image src="/blacklogo2.png" alt="MyChart by Alera" width={200} height={50} style={{ objectFit: 'contain' }} priority />
               </div>
+              <h1 className="text-2xl md:text-3xl font-bold text-[#4A3A33] mb-3 font-['Montserrat']">
+                MyChart by Alera
+              </h1>
+              <p className="text-sm text-[#4A3A33]/70 mb-4 leading-relaxed">
+                Your secure patient portal for managing health records, tracking vital signs, and communicating with your healthcare providers.
+              </p>
               <h2 className="text-sm font-medium text-[#4A3A33]/70 tracking-wide">
                 {isForgotPassword ? 'Reset your password' : isRegistering ? 'Create your new account' : 'Sign in to access your records'}
               </h2>
