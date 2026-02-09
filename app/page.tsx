@@ -627,6 +627,117 @@ export default function MyChartDashboard() {
     }
   };
 
+  const handleRecordDelete = async (recordId: string, recordType: string) => {
+    if (!confirm(`Are you sure you want to delete this ${recordType} record? This action cannot be undone.`)) return;
+
+    try {
+      await deleteDoc(doc(db, 'records', recordId));
+      setRecords(records.filter(r => r.id !== recordId));
+      alert('Record deleted successfully.');
+    } catch (error) {
+      console.error('Error deleting record:', error);
+      alert('Failed to delete record. Please try again.');
+    }
+  };
+
+  const handlePatientDelete = async (patientId: string, patientName: string, patientEmail: string) => {
+    const confirmation = prompt(
+      `⚠️ WARNING: This will PERMANENTLY delete ALL data for ${patientName} (${patientEmail}).\n\n` +
+      `This includes:\n` +
+      `- All health records (blood pressure, glucose, weight)\n` +
+      `- All lab results and files\n` +
+      `- All referrals and files\n` +
+      `- The patient account itself\n\n` +
+      `This action CANNOT be undone!\n\n` +
+      `Type "DELETE" to confirm:`
+    );
+
+    if (confirmation !== 'DELETE') {
+      if (confirmation !== null) {
+        alert('Deletion cancelled. You must type "DELETE" exactly to confirm.');
+      }
+      return;
+    }
+
+    try {
+      // Delete all health records
+      const recordsQuery = query(collection(db, 'records'), where('patientId', '==', patientId));
+      const recordsSnapshot = await getDocs(recordsQuery);
+      const deleteRecordsPromises = recordsSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deleteRecordsPromises);
+
+      // Delete all lab results and files
+      const labResultsQuery = query(collection(db, 'labResults'), where('patientId', '==', patientId));
+      const labResultsSnapshot = await getDocs(labResultsQuery);
+      const storage = getStorage();
+      const deleteLabPromises = labResultsSnapshot.docs.map(async (docSnap) => {
+        const data = docSnap.data();
+        if (data.filePath) {
+          try {
+            const storageRef = ref(storage, data.filePath);
+            await deleteObject(storageRef);
+          } catch (e) {
+            console.warn('Could not delete lab file:', e);
+          }
+        }
+        await deleteDoc(docSnap.ref);
+      });
+      await Promise.all(deleteLabPromises);
+
+      // Delete all referrals and files
+      const referralsQuery = query(collection(db, 'referrals'), where('patientId', '==', patientId));
+      const referralsSnapshot = await getDocs(referralsQuery);
+      const deleteReferralPromises = referralsSnapshot.docs.map(async (docSnap) => {
+        const data = docSnap.data();
+        if (data.filePath) {
+          try {
+            const storageRef = ref(storage, data.filePath);
+            await deleteObject(storageRef);
+          } catch (e) {
+            console.warn('Could not delete referral file:', e);
+          }
+        }
+        await deleteDoc(docSnap.ref);
+      });
+      await Promise.all(deleteReferralPromises);
+
+      // Delete profile picture if exists
+      const userDoc = await getDoc(doc(db, 'users', patientId));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.photoURL) {
+          try {
+            // Extract path from URL if it's a Firebase Storage URL
+            const photoPath = `profilePictures/${patientId}`;
+            const photoRef = ref(storage, photoPath);
+            await deleteObject(photoRef);
+          } catch (e) {
+            console.warn('Could not delete profile picture:', e);
+          }
+        }
+      }
+
+      // Finally, delete the user account
+      await deleteDoc(doc(db, 'users', patientId));
+
+      // Update local state
+      setRecords(records.filter(r => r.patientId !== patientId));
+      setLabResults(labResults.filter(r => r.patientId !== patientId));
+      setReferrals(referrals.filter(r => r.patientId !== patientId));
+      setPatientList(patientList.filter(p => p.uid !== patientId));
+
+      // If viewing this patient's profile, close it
+      if (selectedPatient?.uid === patientId) {
+        setSelectedPatient(null);
+      }
+
+      alert(`Patient ${patientName} and all their data have been permanently deleted.`);
+    } catch (error) {
+      console.error('Error deleting patient:', error);
+      alert('Failed to delete patient. Please try again or contact support.');
+    }
+  };
+
   const filteredRecords = records.filter(record => {
     // Filter by search term
     if (userData?.role !== 'staff') return true;
@@ -1867,15 +1978,27 @@ export default function MyChartDashboard() {
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 shrink-0">
+                          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 viewPatientProfile(patientId);
                               }}
-                              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] hover:from-[#7a9b78] hover:to-[#8AAB88] rounded-xl transition-all shadow-md"
+                              className="px-3 sm:px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] hover:from-[#7a9b78] hover:to-[#8AAB88] rounded-xl transition-all shadow-md"
                             >
                               View Profile
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePatientDelete(patientId, patientName, patientEmail);
+                              }}
+                              className="px-3 sm:px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-xl transition-all shadow-md"
+                              title="Delete Patient"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
                             </button>
                             <svg
                               className={`w-6 h-6 text-[#4A3A33] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
@@ -1909,7 +2032,7 @@ export default function MyChartDashboard() {
 
                               return (
                                 <div key={r.id} className="p-4 bg-white rounded-xl border border-[#D9A68A]/20 hover:shadow-md transition-all">
-                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                  <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
                                     <div className="flex-1 min-w-0">
                                       <div className="flex flex-wrap items-center gap-2 mb-2">
                                         <span className="font-bold text-base sm:text-lg text-[#4A3A33]">{r.subType || r.type}</span>
@@ -1923,23 +2046,34 @@ export default function MyChartDashboard() {
                                         {new Date(r.readingTime || r.createdAt).toLocaleString()}
                                       </span>
                                     </div>
-                                    <div className="text-left sm:text-right shrink-0">
-                                      {r.type === 'Hypertension Log' ? (
-                                        <>
+                                    <div className="flex items-center gap-3 shrink-0">
+                                      <div className="text-left sm:text-right">
+                                        {r.type === 'Hypertension Log' ? (
+                                          <>
+                                            <span className="text-2xl sm:text-3xl font-bold block text-[#4A3A33]">
+                                              {r.value.systolic}/{r.value.diastolic}
+                                              <span className="text-sm font-normal ml-2 text-[#4A3A33]/60">{r.unit}</span>
+                                            </span>
+                                            <span className="text-sm text-[#4A3A33]/70 mt-1 block font-medium">
+                                              Pulse: {r.value.pulse} bpm
+                                            </span>
+                                          </>
+                                        ) : (
                                           <span className="text-2xl sm:text-3xl font-bold block text-[#4A3A33]">
-                                            {r.value.systolic}/{r.value.diastolic}
+                                            {r.value}
                                             <span className="text-sm font-normal ml-2 text-[#4A3A33]/60">{r.unit}</span>
                                           </span>
-                                          <span className="text-sm text-[#4A3A33]/70 mt-1 block font-medium">
-                                            Pulse: {r.value.pulse} bpm
-                                          </span>
-                                        </>
-                                      ) : (
-                                        <span className="text-2xl sm:text-3xl font-bold block text-[#4A3A33]">
-                                          {r.value}
-                                          <span className="text-sm font-normal ml-2 text-[#4A3A33]/60">{r.unit}</span>
-                                        </span>
-                                      )}
+                                        )}
+                                      </div>
+                                      <button
+                                        onClick={() => handleRecordDelete(r.id, r.type)}
+                                        className="p-2 text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg transition-all shadow-sm"
+                                        title="Delete record"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
                                     </div>
                                   </div>
                                 </div>
