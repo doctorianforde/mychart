@@ -51,8 +51,15 @@ export const loginWithGoogle = async () => {
 
   if (!userDoc.exists()) {
     // Create new user document (default to patient)
+    console.log('[Google Auth] Creating new user document with:', {
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL
+    });
     await setDoc(userDocRef, {
       email: user.email,
+      displayName: user.displayName, // Add Google displayName
+      fullName: user.displayName, // Also save as fullName for consistency
       role: "patient",
       createdAt: new Date(),
       photoURL: user.photoURL
