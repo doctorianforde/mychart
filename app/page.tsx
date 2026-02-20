@@ -102,6 +102,7 @@ export default function MyChartDashboard() {
   const [patientList, setPatientList] = useState<any[]>([]);
   const [selectedUploadPatientId, setSelectedUploadPatientId] = useState('');
   const [selectedUploadPatientEmail, setSelectedUploadPatientEmail] = useState('');
+  const [selectedUploadPatientName, setSelectedUploadPatientName] = useState('');
 
   // File upload constraints
   const ALLOWED_FILE_TYPES = [
@@ -233,6 +234,7 @@ export default function MyChartDashboard() {
     const newRecord = {
       patientId: user.uid,
       patientEmail: user.email,
+      patientName: userData.fullName || null, // FIX: Include patient name
       patientPhone: userData.phoneNumber || null,
       type: 'Hypertension Log',
       readingSite: readingSite,
@@ -242,6 +244,8 @@ export default function MyChartDashboard() {
       flag: flag,
       createdAt: new Date().toISOString()
     };
+
+    console.log('[DEBUG] Creating record with patientName:', newRecord.patientName);
 
     try {
       const docRef = await addDoc(collection(db, "records"), newRecord);
@@ -456,6 +460,7 @@ export default function MyChartDashboard() {
     const newRecord = {
       patientId: user.uid,
       patientEmail: user.email,
+      patientName: userData.fullName || null, // FIX: Include patient name
       patientPhone: userData.phoneNumber || null,
       type: 'Diabetes Log',
       subType: type,
@@ -497,6 +502,7 @@ export default function MyChartDashboard() {
     const newRecord = {
       patientId: user.uid,
       patientEmail: user.email,
+      patientName: userData.fullName || null, // FIX: Include patient name
       patientPhone: userData.phoneNumber || null,
       type: 'Weight Log',
       value: parseFloat(weightValue),
@@ -534,6 +540,7 @@ export default function MyChartDashboard() {
 
     let targetPatientId: string;
     let targetPatientEmail: string;
+    let targetPatientName: string;
 
     if (userData.role === 'staff') {
       if (!selectedUploadPatientId) {
@@ -542,9 +549,11 @@ export default function MyChartDashboard() {
       }
       targetPatientId = selectedUploadPatientId;
       targetPatientEmail = selectedUploadPatientEmail;
+      targetPatientName = selectedUploadPatientName;
     } else {
       targetPatientId = user.uid;
       targetPatientEmail = user.email || '';
+      targetPatientName = userData.fullName || '';
     }
 
     if (!file) {
@@ -577,6 +586,7 @@ export default function MyChartDashboard() {
       const metadata = {
         patientId: targetPatientId,
         patientEmail: targetPatientEmail,
+        patientName: targetPatientName, // Include patient name
         uploadedBy: user.uid,
         uploaderRole: userData.role,
         uploaderEmail: user.email,
@@ -1587,6 +1597,7 @@ export default function MyChartDashboard() {
                     const selected = patientList.find(p => p.uid === e.target.value);
                     setSelectedUploadPatientId(e.target.value);
                     setSelectedUploadPatientEmail(selected?.email || '');
+                    setSelectedUploadPatientName(selected?.fullName || '');
                   }}
                   className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all cursor-pointer"
                 >
@@ -1727,6 +1738,7 @@ export default function MyChartDashboard() {
                     const selected = patientList.find(p => p.uid === e.target.value);
                     setSelectedUploadPatientId(e.target.value);
                     setSelectedUploadPatientEmail(selected?.email || '');
+                    setSelectedUploadPatientName(selected?.fullName || '');
                   }}
                   className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all cursor-pointer"
                 >
