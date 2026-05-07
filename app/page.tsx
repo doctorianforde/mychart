@@ -1436,20 +1436,21 @@ if (!user) {
                         onClick={() => togglePatientExpanded(patientId)}
                         className="p-4 sm:p-6 cursor-pointer hover:bg-[#EFE7DD]/20 transition-all"
                       >
-                        <div className="flex justify-between items-center gap-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-lg sm:text-xl font-bold text-[#4A3A33] truncate">{patientName}</h3>
+                              <h3 className="text-base sm:text-lg font-bold text-[#4A3A33] truncate">{patientName}</h3>
                               {criticalCount > 0 && (
-                                <span className="px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
+                                <span className="px-2.5 py-1 bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-full">
                                   {criticalCount} Critical
                                 </span>
                               )}
                               {warningCount > 0 && (
-                                <span className="px-2.5 py-1 bg-yellow-500 text-white text-xs font-bold rounded-full">
+                                <span className="px-2.5 py-1 bg-yellow-500 text-white text-[10px] sm:text-xs font-bold rounded-full">
                                   {warningCount} Warning
                                 </span>
                               )}
+                            
                             </div>
                             <p className="text-sm text-[#4A3A33]/70 truncate mb-1">{patientEmail}</p>
                             <div className="flex flex-wrap gap-3 text-xs sm:text-sm text-[#4A3A33]/60">
@@ -1467,7 +1468,7 @@ if (!user) {
                                 e.stopPropagation();
                                 viewPatientProfile(latestRecord.patientId);
                               }}
-                              className="px-3 sm:px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] hover:from-[#7a9b78] hover:to-[#8AAB88] rounded-xl transition-all shadow-md"
+                              className="px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] hover:from-[#7a9b78] hover:to-[#8AAB88] rounded-xl transition-all shadow-md"
                             >
                               View Profile
                             </button>
