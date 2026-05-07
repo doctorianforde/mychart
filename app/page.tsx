@@ -1411,7 +1411,17 @@ if (!user) {
                 {getSortedPatientIds().map((patientId) => {
                   const patientRecords = patientGroups[patientId];
                   const latestRecord = patientRecords[0];
-                  const patientName = latestRecord.patientName || 'Unknown Patient';
+                  // Determine patient name:
+                  // 1. Use latestRecord.patientName if available.
+                  // 2. Fallback to searching patientList by uid (preferred) or email.
+                  // 3. Fallback to 'Unknown Patient' if not found.
+                  let patientName = latestRecord.patientName;
+                  if (!patientName) {
+                    const matchedPatient = patientList.find(
+                      (p) => p.uid === patientId || p.email === (latestRecord.patientEmail || '')
+                    );
+                    patientName = matchedPatient?.fullName || 'Unknown Patient';
+                  }
                   const patientEmail = latestRecord.patientEmail;
                   const isExpanded = expandedPatients.has(patientId);
 
