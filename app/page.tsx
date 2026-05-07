@@ -876,11 +876,23 @@ export default function MyChartDashboard() {
   };
 
   const viewPatientProfile = async (patientId: string) => {
-    const patientDoc = await getDoc(doc(db, "users", patientId));
-    if (patientDoc.exists()) {
-      const data = patientDoc.data();
-      setSelectedPatient({ ...data, uid: patientId });
-      setPrescriptionText(data.prescriptions || '');
+    try {
+      const userDocRef = doc(db, "users", patientId);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const data = userDocSnap.data();
+        setSelectedPatient({ uid: patientId, ...data });
+        setPrescriptionText(data.prescriptions || '');
+
+        // Scroll to top when profile is selected
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        alert('Patient document not found.');
+      }
+    } catch (error) {
+      console.error("Error fetching patient profile:", error);
+      alert("Failed to load patient profile.");
     }
   };
 
@@ -1443,7 +1455,7 @@ if (!user) {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                viewPatientProfile(patientId);
+                                viewPatientProfile(latestRecord.patientId);
                               }}
                               className="px-3 sm:px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] hover:from-[#7a9b78] hover:to-[#8AAB88] rounded-xl transition-all shadow-md"
                             >
