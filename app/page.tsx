@@ -13,6 +13,7 @@ import DiabetesForm from '@/src/components/DiabetesForm';
 import LabResultsManager from '@/src/components/LabResultsManager';
 import WeightLogForm from '@/src/components/WeightLogForm';
 import ReferralsManager from '@/src/components/ReferralsManager';
+import WhatsAppSupport from '@/src/components/WhatsAppSupport';
 import { login, loginWithGoogle, register, uploadProfilePicture, resetPassword } from '@/src/lib/authService';
 
 
@@ -1327,6 +1328,14 @@ if (!user) {
             <h2 className="text-2xl sm:text-3xl font-bold text-[#4A3A33] font-['Montserrat'] mb-4">
               {userData?.role === 'staff' ? 'Patient Records' : 'Medical Records'}
             </h2>
+
+            {/* WhatsApp Support for Patients */}
+            {userData?.role === 'patient' && (
+              <WhatsAppSupport
+                userData={userData}
+                officeNumber="18684625372"
+              />
+            )}
             {userData?.role === 'staff' && (
               <div className="space-y-3">
                 <input
