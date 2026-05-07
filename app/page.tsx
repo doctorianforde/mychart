@@ -266,16 +266,19 @@ export default function MyChartDashboard() {
     setError('');
     try {
       if (isRegistering) {
-        if (role === 'staff' && staffCode !== 'ACC20252026' && staffCode !== 'Medicaldoctor2026!') {
+        const user = await register(email, password);
+        const idToken = await user.getIdToken();
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken, role, staffCode, fullName, phoneNumber, age, comorbidities }),
+        });
+        if (!res.ok) throw new Error('Registration failed. Please try again.');
+        const { role: assignedRole } = await res.json();
+        if (role === 'staff' && assignedRole !== 'staff') {
           setError('Invalid Staff Code');
           return;
         }
-        const user = await register(email, password, role, { 
-          phoneNumber,
-          fullName,
-          age,
-          comorbidities
-        });
         if (user && profilePic) {
           await uploadProfilePicture(profilePic, user.uid);
         }

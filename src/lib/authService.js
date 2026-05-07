@@ -24,19 +24,10 @@ export const login = async (email, password) => {
   return { user: userCredential.user, role: userDoc.data()?.role };
 };
 
-export const register = async (email, password, role = "patient", additionalData = {}) => {
-  // Note: In a real app, ensure only Admins can create 'staff' accounts via Security Rules or Admin SDK
+// Creates the Firebase Auth user only. Role assignment and Firestore write
+// happen server-side in /api/auth/register to prevent client-side role spoofing.
+export const register = async (email, password) => {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  const uid = userCredential.user.uid;
-
-  // Create user document with role
-  await setDoc(doc(db, "users", uid), {
-    email,
-    role, // 'patient' or 'staff'
-    createdAt: new Date(),
-    ...additionalData
-  });
-
   return userCredential.user;
 };
 
