@@ -7,10 +7,12 @@ import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { collection, query, where, getDocs, addDoc, getDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { auth, db } from '@/src/lib/firebase';
+import AuthForm from '@/src/components/AuthForm';
+import HypertensionForm from '@/src/components/HypertensionForm';
+import DiabetesForm from '@/src/components/DiabetesForm';
+import LabResultsManager from '@/src/components/LabResultsManager';
 import { login, loginWithGoogle, register, uploadProfilePicture, resetPassword } from '@/src/lib/authService';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+
 
 function ProfileImage({ src, alt, className, fallback }: { src?: string | null, alt: string, className?: string, fallback: React.ReactNode }) {
   const [error, setError] = useState(false);
@@ -895,7 +897,11 @@ export default function MyChartDashboard() {
     setLogTime(time);
   };
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
+    try {
+      const { default: jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
     const doc = new jsPDF();
     doc.text("Patient Records", 14, 15);
 
@@ -921,304 +927,62 @@ export default function MyChartDashboard() {
       startY: 20
     });
     doc.save('patient_records.pdf');
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      alert("Failed to export PDF. Please try again.");
+    }
   };
 
-  const handleExportExcel = () => {
-    const data = filteredRecords.map(record => ({
-      Date: new Date(record.createdAt || record.readingTime).toLocaleString(),
-      "Patient Email": record.patientEmail,
-      Type: record.type,
-      "Sub Type": record.subType || '-',
-      Value: record.type === 'Hypertension Log' ? `${record.value.systolic}/${record.value.diastolic} (Pulse: ${record.value.pulse})` : record.type === 'Weight Log' ? `${record.value} ${record.unit}` : record.value,
-      Unit: record.unit,
-      Flag: record.flag || '-',
-    }));
+    const handleExportExcel = async () => {
+    try {
+      // Dynamically import the library to avoid bundling issues and keep bundle size small
+      const XLSX = await import('xlsx');
 
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Patient Records");
-    XLSX.writeFile(wb, "patient_records.xlsx");
+      const data = filteredRecords.map(record => ({
+        Date: new Date(record.createdAt || record.readingTime).toLocaleString(),
+        "Patient Email": record.patientEmail,
+        Type: record.type,
+        "Sub Type": record.subType || '-',
+        Value: record.type === 'Hypertension Log' ? `${record.value.systolic}/${record.value.diastolic} (Pulse: ${record.value.pulse})` : record.type === 'Weight Log' ? `${record.value} ${record.unit}` : record.value,
+        Unit: record.unit,
+        Flag: record.flag || '-',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Patient Records");
+      XLSX.writeFile(wb, "patient_records.xlsx");
+    } catch (err) {
+      console.error("Failed to export Excel:", err);
+      alert("An error occurred while generating the Excel file.");
+    }
   };
 
   if (loading) return <div className="p-10">Loading MyChart...</div>;
 
-  if (!user) {
+if (!user) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gradient-to-br from-[#EFE7DD] via-[#f7f2ea] to-[#EFE7DD]">
-        <div className="w-full max-w-md">
-          <div className="bg-white/80 backdrop-blur-sm p-10 rounded-2xl shadow-xl border border-white/50">
-            <div className="text-center mb-8">
-              <div className="flex justify-center mb-6">
-                <Image src="/blacklogo2.png" alt="MyChart by Alera" width={200} height={50} style={{ objectFit: 'contain' }} priority />
-              </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-[#4A3A33] mb-3 font-['Montserrat']">
-                MyChart by Alera
-              </h1>
-              <p className="text-sm text-[#4A3A33]/70 mb-4 leading-relaxed">
-                Your secure patient portal for managing health records, tracking vital signs, and communicating with your healthcare providers.
-              </p>
-              <h2 className="text-sm font-medium text-[#4A3A33]/70 tracking-wide">
-                {isForgotPassword ? 'Reset your password' : isRegistering ? 'Create your new account' : 'Sign in to access your records'}
-              </h2>
-            </div>
-
-          {error && (
-            <div className="mb-6 bg-gradient-to-r from-red-50 to-red-50/50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-              <p className="text-sm font-medium text-red-700">{error}</p>
-            </div>
-          )}
-
-          {resetMessage && (
-            <div className="mb-6 bg-gradient-to-r from-green-50 to-green-50/50 border-l-4 border-[#8AAB88] p-4 rounded-lg shadow-sm">
-              <p className="text-sm font-medium text-[#4A3A33]">{resetMessage}</p>
-            </div>
-          )}
-
-          {isForgotPassword ? (
-            <form className="space-y-6" onSubmit={handleForgotPassword}>
-              <div>
-                <label htmlFor="reset-email" className="block text-base font-bold text-[#4A3A33] mb-3">Email address</label>
-                <input
-                  id="reset-email"
-                  type="email"
-                  required
-                  className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-base p-4 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <button type="submit" className="w-full flex justify-center py-4 px-8 rounded-xl shadow-md text-lg font-bold text-white bg-gradient-to-r from-[#4A3A33] to-[#5e4d44] hover:from-[#3a2e28] hover:to-[#4A3A33] focus:outline-none focus:ring-4 focus:ring-[#4A3A33]/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
-                Send Reset Link
-              </button>
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => { setIsForgotPassword(false); setError(''); setResetMessage(''); }}
-                  className="text-base font-bold text-[#8AAB88] hover:text-[#4A3A33] underline decoration-2 underline-offset-4 transition-colors py-2 px-4"
-                >
-                  Back to Sign In
-                </button>
-              </div>
-            </form>
-          ) : (
-          <>
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-5">
-              <div>
-                <label htmlFor="email" className="block text-base font-bold text-[#4A3A33] mb-3">Email address</label>
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-base p-4 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <div className="relative">
-                  <label htmlFor="password" className="block text-base font-bold text-[#4A3A33] mb-3">Password</label>
-                  <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-base p-4 pr-16 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="absolute top-11 right-4 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-semibold px-3 py-2 rounded-md hover:bg-[#8AAB88]/10"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? 'Hide' : 'Show'}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {isRegistering && (
-              <div className="space-y-6 pt-2">
-                <div>
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-base p-4 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
-                    placeholder="John Doe"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Age</label>
-                  <input
-                    type="number"
-                    required
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-base p-4 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
-                    placeholder="30"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Comorbidities</label>
-                  <textarea
-                    rows={3}
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-base p-4 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all resize-none"
-                    placeholder="e.g. Hypertension, Asthma"
-                    value={comorbidities}
-                    onChange={(e) => setComorbidities(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Phone Number</label>
-                  <input
-                    type="tel"
-                    required
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-base p-4 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
-                    placeholder="(555) 555-5555"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">I am a:</label>
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-base p-4 text-[#4A3A33] transition-all cursor-pointer"
-                  >
-                    <option value="patient">Patient</option>
-                    <option value="staff">Staff</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Profile Picture</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        if (!file.type.startsWith('image/')) {
-                          alert('Please upload a valid image file.');
-                          e.target.value = '';
-                          setProfilePic(null);
-                          return;
-                        }
-                        if (file.size > 5 * 1024 * 1024) {
-                          alert('File size exceeds 5MB limit.');
-                          e.target.value = '';
-                          setProfilePic(null);
-                          return;
-                        }
-                        setProfilePic(file);
-                      } else {
-                        setProfilePic(null);
-                      }
-                    }}
-                    className="block w-full text-base text-[#4A3A33] file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-base file:font-bold file:bg-[#EFE7DD] file:text-[#4A3A33] hover:file:bg-[#D9A68A]/30 file:transition-all file:cursor-pointer cursor-pointer"
-                  />
-                </div>
-
-                {role === 'staff' && (
-                  <div>
-                    <label className="block text-base font-bold text-[#4A3A33] mb-3">Staff Access Code</label>
-                    <input
-                      type="password"
-                      placeholder="Enter code"
-                      value={staffCode}
-                      onChange={(e) => setStaffCode(e.target.value)}
-                      className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 text-base p-4 text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            <button type="submit" className="w-full flex justify-center py-4 px-8 rounded-xl shadow-md text-lg font-bold text-white bg-gradient-to-r from-[#4A3A33] to-[#5e4d44] hover:from-[#3a2e28] hover:to-[#4A3A33] focus:outline-none focus:ring-4 focus:ring-[#4A3A33]/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
-              {isRegistering ? 'Create Account' : 'Sign In'}
-            </button>
-
-            {!isRegistering && (
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => { setIsForgotPassword(true); setError(''); setResetMessage(''); }}
-                  className="text-sm font-bold text-[#D9A68A] hover:text-[#4A3A33] underline decoration-2 underline-offset-4 transition-colors py-2 px-4"
-                >
-                  Forgot your password?
-                </button>
-              </div>
-            )}
-          </form>
-
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t-2 border-[#D9A68A]/30" />
-            </div>
-            <div className="relative flex justify-center text-base">
-              <span className="bg-white/80 backdrop-blur-sm px-5 text-[#4A3A33]/60 font-semibold">Or continue with</span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleGoogleLogin}
-            className="w-full flex justify-center items-center gap-3 py-4 px-8 border-2 border-[#D9A68A]/30 rounded-xl shadow-sm bg-white hover:bg-[#EFE7DD]/30 text-base font-bold text-[#4A3A33] focus:outline-none focus:ring-4 focus:ring-[#8AAB88]/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-          >
-            <svg className="h-6 w-6" aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-            </svg>
-            Sign in with Google
-          </button>
-
-          <div className="text-center mt-6">
-            <button
-              onClick={() => setIsRegistering(!isRegistering)}
-              className="text-base font-bold text-[#8AAB88] hover:text-[#4A3A33] underline decoration-2 underline-offset-4 transition-colors py-2 px-4"
-            >
-              {isRegistering ? 'Already have an account? Sign in' : 'Need an account? Register'}
-            </button>
-          </div>
-
-          {/* Legal Links Footer */}
-          <div className="mt-8 pt-6 border-t border-[#D9A68A]/30">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm">
-              <Link
-                href="/tos"
-                className="text-[#4A3A33]/70 hover:text-[#8AAB88] font-medium underline decoration-2 underline-offset-2"
-              >
-                Terms of Service
-              </Link>
-              <span className="hidden sm:inline text-[#4A3A33]/40">•</span>
-              <Link
-                href="/privacy"
-                className="text-[#4A3A33]/70 hover:text-[#8AAB88] font-medium underline decoration-2 underline-offset-2"
-              >
-                Privacy Policy
-              </Link>
-            </div>
-            <p className="text-center text-xs text-[#4A3A33]/60 mt-4">
-              © {new Date().getFullYear()} Alera Care Collective. All rights reserved.
-            </p>
-          </div>
-          </>
-          )}
-
-          </div>
-        </div>
-      </main>
+      <AuthForm 
+        email={email} setEmail={setEmail}
+        password={password} setPassword={setPassword}
+        isRegistering={isRegistering} setIsRegistering={setIsRegistering}
+        role={role} setRole={setRole}
+        fullName={fullName} setFullName={setFullName}
+        age={age} setAge={setAge}
+        comorbidities={comorbidities} setComorbidities={setComorbidities}
+        phoneNumber={phoneNumber} setPhoneNumber={setPhoneNumber}
+        staffCode={staffCode} setStaffCode={setStaffCode}
+        setProfilePic={setProfilePic}
+        error={error} setError={setError}
+        showPassword={showPassword} setShowPassword={setShowPassword}
+        isForgotPassword={isForgotPassword} setIsForgotPassword={setIsForgotPassword}
+        resetMessage={resetMessage} setResetMessage={setResetMessage}
+        handleSubmit={handleSubmit}
+        handleForgotPassword={handleForgotPassword}
+        handleGoogleLogin={handleGoogleLogin}
+      />
     );
   }
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#EFE7DD] via-[#f7f2ea] to-[#EFE7DD] p-6 md:p-8">
       <div className="max-w-6xl mx-auto">
@@ -1364,169 +1128,29 @@ export default function MyChartDashboard() {
 
         {/* Hypertension Log Section - Only for Patients */}
         {userData?.role === 'patient' && (
-          <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-[#4A3A33] font-['Montserrat']">Log Blood Pressure Reading</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <form onSubmit={handleHypertensionLog} className="space-y-6">
-                <div>
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={logDate}
-                    onChange={(e) => setLogDate(e.target.value)}
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-2 sm:p-4 text-sm sm:text-base text-[#4A3A33] transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Time of Reading</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="time"
-                      required
-                      value={logTime}
-                      onChange={(e) => setLogTime(e.target.value)}
-                      className="block flex-1 min-w-0 rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSetCurrentTime}
-                      className="shrink-0 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-4 py-2 rounded-xl border-2 border-[#8AAB88]/30 hover:bg-[#8AAB88]/10 transition-all"
-                    >
-                      Now
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Reading Site</label>
-                  <select
-                    value={readingSite}
-                    onChange={(e) => setReadingSite(e.target.value)}
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all cursor-pointer"
-                  >
-                    <option value="left_arm">Left Arm</option>
-                    <option value="right_arm">Right Arm</option>
-                    <option value="left_wrist">Left Wrist</option>
-                    <option value="right_wrist">Right Wrist</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Systolic (Top Number)</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="e.g. 120"
-                    value={systolic}
-                    onChange={(e) => setSystolic(e.target.value)}
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-lg text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Diastolic (Bottom Number)</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="e.g. 80"
-                    value={diastolic}
-                    onChange={(e) => setDiastolic(e.target.value)}
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-lg text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-base font-bold text-[#4A3A33] mb-3">Pulse (BPM)</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="e.g. 70"
-                    value={pulse}
-                    onChange={(e) => setPulse(e.target.value)}
-                    className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-lg text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
-                  />
-                </div>
-                <button type="submit" className="w-full py-4 px-8 rounded-xl shadow-md text-lg font-bold text-white bg-gradient-to-r from-[#4A3A33] to-[#5e4d44] hover:from-[#3a2e28] hover:to-[#4A3A33] focus:outline-none focus:ring-4 focus:ring-[#4A3A33]/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
-                  Log BP Reading
-                </button>
-                {hypertensionLogMessage && <p className="text-base text-[#8AAB88] font-bold mt-2">{hypertensionLogMessage}</p>}
-              </form>
-              <div className="bg-gradient-to-br from-[#EFE7DD]/40 to-[#f7f2ea]/20 p-6 rounded-xl border-2 border-[#D9A68A]/20">
-                <h3 className="text-xl font-bold text-[#4A3A33] font-['Montserrat'] mb-5">How to Measure Your Blood Pressure Correctly</h3>
-                <p className="text-base text-[#4A3A33] font-semibold mb-5">Follow these steps from the American Heart Association:</p>
-                <ul className="space-y-4 text-base text-[#4A3A33] leading-relaxed">
-                  <li className="flex gap-3"><span className="text-[#8AAB88] font-bold text-xl">•</span><span><strong className="text-[#4A3A33] font-bold">Be still.</strong> Don't smoke, drink caffeinated beverages or exercise within 30 minutes before measuring your blood pressure. Empty your bladder and ensure at least 5 minutes of quiet rest before measurements.</span></li>
-                  <li className="flex gap-3"><span className="text-[#8AAB88] font-bold text-xl">•</span><span><strong className="text-[#4A3A33] font-bold">Sit correctly.</strong> Sit with your back straight and supported (on a dining chair, rather than a sofa). Your feet should be flat on the floor and your legs should not be crossed. Your arm should be supported on a flat surface (such as a table) with the upper arm at heart level.</span></li>
-                  <li className="flex gap-3"><span className="text-[#8AAB88] font-bold text-xl">•</span><span><strong className="text-[#4A3A33] font-bold">Measure on a bare arm.</strong> Roll up your sleeve. The cuff should be placed on a bare arm.</span></li>
-                  <li className="flex gap-3"><span className="text-[#8AAB88] font-bold text-xl">•</span><span><strong className="text-[#4A3A33] font-bold">Take multiple readings.</strong> Take at least two readings one minute apart and record both results.</span></li>
-                </ul>
-                <div className="mt-6 p-4 rounded-xl bg-white border border-[#D9A68A]/20">
-                  <h4 className="font-semibold text-[#4A3A33] mb-3 text-sm">Correct Posture Diagram</h4>
-                  <Image src="/bp_posture.jpg" alt="Correct posture for blood pressure measurement" width={500} height={300} style={{ objectFit: 'contain' }} />
-                </div>
-              </div>
-            </div>
-          </div>
+          <HypertensionForm
+            logDate={logDate} setLogDate={setLogDate}
+            logTime={logTime} setLogTime={setLogTime}
+            readingSite={readingSite} setReadingSite={setReadingSite}
+            systolic={systolic} setSystolic={setSystolic}
+            diastolic={diastolic} setDiastolic={setDiastolic}
+            pulse={pulse} setPulse={setPulse}
+            hypertensionLogMessage={hypertensionLogMessage}
+            handleHypertensionLog={handleHypertensionLog}
+            handleSetCurrentTime={handleSetCurrentTime}
+          />
         )}
-
         {/* Diabetes Log Section - Only for Patients */}
         {userData?.role === 'patient' && (
-          <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-[#4A3A33] font-['Montserrat']">Log Glucose Reading</h2>
-            <form onSubmit={handleDiabetesLog} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-base font-bold text-[#4A3A33] mb-3">Date</label>
-                <input
-                  type="date"
-                  required
-                  value={logDate}
-                  onChange={(e) => setLogDate(e.target.value)}
-                  className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-2 sm:p-4 text-sm sm:text-base text-[#4A3A33] transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-base font-bold text-[#4A3A33] mb-3">Time of Reading</label>
-                <div className="flex gap-2">
-                  <input
-                    type="time"
-                    required
-                    value={logTime}
-                    onChange={(e) => setLogTime(e.target.value)}
-                    className="block flex-1 min-w-0 rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSetCurrentTime}
-                    className="shrink-0 text-sm text-[#8AAB88] hover:text-[#4A3A33] font-bold px-4 py-2 rounded-xl border-2 border-[#8AAB88]/30 hover:bg-[#8AAB88]/10 transition-all"
-                  >
-                    Now
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="block text-base font-bold text-[#4A3A33] mb-3">Glucose (mg/dL)</label>
-                <input
-                  type="number"
-                  required
-                  placeholder="e.g. 120"
-                  value={glucoseValue}
-                  onChange={(e) => setGlucoseValue(e.target.value)}
-                  className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-lg text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-base font-bold text-[#4A3A33] mb-3">Time of Last Meal</label>
-                <input
-                  type="time"
-                  required
-                  value={lastMealTime}
-                  onChange={(e) => setLastMealTime(e.target.value)}
-                  className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all"
-                />
-              </div>
-              <button type="submit" className="md:col-span-2 mt-2 w-full py-4 px-8 rounded-xl shadow-md text-lg font-bold text-white bg-gradient-to-r from-[#4A3A33] to-[#5e4d44] hover:from-[#3a2e28] hover:to-[#4A3A33] focus:outline-none focus:ring-4 focus:ring-[#4A3A33]/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
-                Log Reading
-              </button>
-            </form>
-            {logMessage && <p className="mt-4 text-base text-[#8AAB88] font-bold">{logMessage}</p>}
-          </div>
+          <DiabetesForm
+            logDate={logDate} setLogDate={setLogDate}
+            logTime={logTime} setLogTime={setLogTime}
+            glucoseValue={glucoseValue} setGlucoseValue={setGlucoseValue}
+            lastMealTime={lastMealTime} setLastMealTime={setLastMealTime}
+            logMessage={logMessage}
+            handleDiabetesLog={handleDiabetesLog}
+            handleSetCurrentTime={handleSetCurrentTime}
+          />
         )}
 
         {/* Weight Log Section - Only for Patients */}
@@ -1673,54 +1297,31 @@ export default function MyChartDashboard() {
             )}
           </form>
 
-          {labResults.length === 0 ? (
-            <div className="text-center py-12 bg-gradient-to-br from-[#EFE7DD]/40 to-[#f7f2ea]/20 rounded-xl border-2 border-dashed border-[#D9A68A]/40">
-              <p className="text-[#4A3A33]/70 font-medium">No lab results uploaded yet.</p>
-            </div>
-          ) : (
-            <ul className="space-y-4">
-              {labResults.map((item) => (
-                <li key={item.id} className="p-4 sm:p-6 bg-gradient-to-br from-white to-[#EFE7DD]/10 rounded-xl border-2 border-[#D9A68A]/20 hover:border-[#8AAB88] hover:shadow-md transition-all duration-200 text-[#4A3A33]">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#8AAB88]/20 text-[#4A3A33]">
-                          {item.fileType?.includes('pdf') ? 'PDF' : item.fileType?.includes('image') ? 'IMAGE' : 'DOC'}
-                        </span>
-                        <span className="font-bold text-lg truncate">{item.fileName}</span>
-                      </div>
-                      {item.description && (
-                        <p className="text-sm text-[#4A3A33]/70 mb-1">{item.description}</p>
-                      )}
-                      <p className="text-sm text-[#4A3A33]/60 font-medium">{new Date(item.createdAt).toLocaleString()}</p>
-                      <p className="text-xs text-[#4A3A33]/50 mt-1">Uploaded by: {item.uploaderEmail} ({item.uploaderRole})</p>
-                      {userData?.role === 'staff' && (
-                        <p className="text-sm text-[#8AAB88] font-bold mt-1">Patient: {item.patientEmail}</p>
-                      )}
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <a
-                        href={item.fileURL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-5 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] hover:from-[#7a9b78] hover:to-[#8AAB88] rounded-xl transition-all shadow-md hover:shadow-lg"
-                      >
-                        View / Download
-                      </a>
-                      {(userData?.role === 'staff' || item.uploadedBy === user?.uid) && (
-                        <button
-                          onClick={() => handleFileDelete(item.id, item.filePath, 'labResults', labResults, setLabResults)}
-                          className="px-4 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-xl transition-all shadow-md"
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+          {/* Lab Results Display */}
+          <LabResultsManager
+            userData={userData}
+            user={user}
+            labResults={labResults}
+            labFile={labFile}
+            setLabFile={setLabFile}
+            labDescription={labDescription}
+            setLabDescription={setLabDescription}
+            labUploading={labUploading}
+            setLabUploading={setLabUploading}
+            labUploadProgress={labUploadProgress}
+            setLabUploadProgress={setLabUploadProgress}
+            labUploadMessage={labUploadMessage}
+            setLabUploadMessage={setLabUploadMessage}
+            patientList={patientList}
+            selectedUploadPatientId={selectedUploadPatientId}
+            setSelectedUploadPatientId={setSelectedUploadPatientId}
+            setSelectedUploadPatientEmail={setSelectedUploadPatientEmail}
+            setSelectedUploadPatientName={setSelectedUploadPatientName}
+            handleFileUpload={handleFileUpload}
+            handleFileDelete={handleFileDelete}
+            setLabResults={setLabResults}
+            validateFile={validateFile}
+          />
         </div>
 
         {/* Referrals Section - Both Roles */}
