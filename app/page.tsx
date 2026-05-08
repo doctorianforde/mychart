@@ -1210,7 +1210,7 @@ if (!user) {
         </div>
 
 {/* Referrals Section - Both Roles */}
-        <ReferralsManager 
+        <ReferralsManager
           userData={userData}
           user={user}
           referrals={referrals}
@@ -1234,19 +1234,20 @@ if (!user) {
           setReferrals={setReferrals}
           validateFile={validateFile}
         />
+
+        {/* WhatsApp Support for Patients */}
+        {userData?.role === 'patient' && (
+          <WhatsAppSupport
+            userData={userData}
+            officeNumber="18684625372"
+          />
+        )}
+
         <div className="p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
           <div className="mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-3xl font-bold text-[#4A3A33] font-['Montserrat'] mb-4">
               {userData?.role === 'staff' ? 'Patient Records' : 'Medical Records'}
             </h2>
-
-            {/* WhatsApp Support for Patients */}
-            {userData?.role === 'patient' && (
-              <WhatsAppSupport
-                userData={userData}
-                officeNumber="18684625372"
-              />
-            )}
           </div>
 
           <div className="space-y-4">
