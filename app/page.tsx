@@ -1247,6 +1247,9 @@ if (!user) {
                 officeNumber="18684625372"
               />
             )}
+          </div>
+
+          <div className="space-y-4">
             {userData?.role === 'staff' && (
               <div className="space-y-3">
                 <input
@@ -1311,8 +1314,7 @@ if (!user) {
                 </div>
               </div>
             )}
-          </div>
-          {userData?.role === 'staff' ? (
+            {userData?.role === 'staff' ? (
             /* Staff View: Grouped by Patient */
             Object.keys(patientGroups).length === 0 ? (
               <div className="text-center py-16 bg-gradient-to-br from-[#EFE7DD]/40 to-[#f7f2ea]/20 rounded-xl border-2 border-dashed border-[#D9A68A]/40">
@@ -1557,6 +1559,7 @@ if (!user) {
               </ul>
             )
           )}
+          </div>
         </div>
 
         {/* Footer with Links to Legal Pages */}
