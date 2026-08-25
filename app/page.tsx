@@ -14,6 +14,9 @@ import LabResultsManager from '@/src/components/LabResultsManager';
 import WeightLogForm from '@/src/components/WeightLogForm';
 import ReferralsManager from '@/src/components/ReferralsManager';
 import WhatsAppSupport from '@/src/components/WhatsAppSupport';
+import PatientSearchSelect from '@/src/components/PatientSearchSelect';
+import PatientAlertsPanel from '@/src/components/PatientAlertsPanel';
+import RecordsList from '@/src/components/RecordsList';
 import { login, loginWithGoogle, register, uploadProfilePicture, resetPassword } from '@/src/lib/authService';
 
 
@@ -63,8 +66,8 @@ export default function MyChartDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [expandedPatients, setExpandedPatients] = useState<Set<string>>(new Set());
-  const [sortBy, setSortBy] = useState('date'); // 'date', 'name', 'readings'
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [loadingSelectedPatientData, setLoadingSelectedPatientData] = useState(false);
 
   // Diabetes Log State
   const [logDate, setLogDate] = useState('');
@@ -103,11 +106,8 @@ export default function MyChartDashboard() {
   const [referralUploading, setReferralUploading] = useState(false);
   const [referralUploadProgress, setReferralUploadProgress] = useState(0);
 
-  // Staff Patient Selector (for uploads)
+  // Staff Patient Selector
   const [patientList, setPatientList] = useState<any[]>([]);
-  const [selectedUploadPatientId, setSelectedUploadPatientId] = useState('');
-  const [selectedUploadPatientEmail, setSelectedUploadPatientEmail] = useState('');
-  const [selectedUploadPatientName, setSelectedUploadPatientName] = useState('');
 
   // File upload constraints
   const ALLOWED_FILE_TYPES = [
@@ -336,19 +336,12 @@ export default function MyChartDashboard() {
             currentRole = data.role;
           }
 
-          let q;
           if (currentRole === 'staff') {
-            q = query(collection(db, "records"));
-          } else {
-            q = query(collection(db, "records"), where("patientId", "==", currentUser.uid));
-          }
-
-          const querySnapshot = await getDocs(q);
-          const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          setRecords(data);
-
-          // Fetch patient list for staff (for upload patient selector)
-          if (currentRole === 'staff') {
+            // Staff no longer eager-load every patient's records: fetch the
+            // patient roster (cheap) and a scoped "who has an abnormal
+            // reading" query for triage. Per-patient records/labs/referrals
+            // load on demand once a patient is selected (see the
+            // selectedPatient effect below).
             try {
               const patientsQuery = query(collection(db, "users"), where("role", "==", "patient"));
               const patientsSnapshot = await getDocs(patientsQuery);
@@ -362,32 +355,38 @@ export default function MyChartDashboard() {
             } catch (err) {
               console.error("Error fetching patient list:", err);
             }
-          }
 
-          // Fetch lab results
-          try {
-            const labQuery = currentRole === 'staff'
-              ? query(collection(db, "labResults"))
-              : query(collection(db, "labResults"), where("patientId", "==", currentUser.uid));
-            const labSnapshot = await getDocs(labQuery);
-            const labData = labSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            labData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setLabResults(labData);
-          } catch (err) {
-            console.error("Error fetching lab results:", err);
-          }
+            try {
+              const alertsQuery = query(collection(db, "records"), where("flag", "!=", "Normal"));
+              const alertsSnapshot = await getDocs(alertsQuery);
+              setAlerts(alertsSnapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            } catch (err) {
+              console.error("Error fetching flagged records:", err);
+            }
+          } else {
+            const q = query(collection(db, "records"), where("patientId", "==", currentUser.uid));
+            const querySnapshot = await getDocs(q);
+            setRecords(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-          // Fetch referrals
-          try {
-            const refQuery = currentRole === 'staff'
-              ? query(collection(db, "referrals"))
-              : query(collection(db, "referrals"), where("patientId", "==", currentUser.uid));
-            const refSnapshot = await getDocs(refQuery);
-            const refData = refSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            refData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setReferrals(refData);
-          } catch (err) {
-            console.error("Error fetching referrals:", err);
+            try {
+              const labQuery = query(collection(db, "labResults"), where("patientId", "==", currentUser.uid));
+              const labSnapshot = await getDocs(labQuery);
+              const labData = labSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+              labData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+              setLabResults(labData);
+            } catch (err) {
+              console.error("Error fetching lab results:", err);
+            }
+
+            try {
+              const refQuery = query(collection(db, "referrals"), where("patientId", "==", currentUser.uid));
+              const refSnapshot = await getDocs(refQuery);
+              const refData = refSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+              refData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+              setReferrals(refData);
+            } catch (err) {
+              console.error("Error fetching referrals:", err);
+            }
           }
         } catch (error) {
           console.error("Error fetching records:", error);
@@ -398,6 +397,51 @@ export default function MyChartDashboard() {
 
     return () => unsubscribe();
   }, []);
+
+  // Staff: load the selected patient's records/labs/referrals on demand
+  // instead of eager-loading every patient's data at login.
+  useEffect(() => {
+    if (userData?.role !== 'staff') return;
+
+    if (!selectedPatient?.uid) {
+      setRecords([]);
+      setLabResults([]);
+      setReferrals([]);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingSelectedPatientData(true);
+
+    (async () => {
+      try {
+        const [recordsSnap, labSnap, refSnap] = await Promise.all([
+          getDocs(query(collection(db, "records"), where("patientId", "==", selectedPatient.uid))),
+          getDocs(query(collection(db, "labResults"), where("patientId", "==", selectedPatient.uid))),
+          getDocs(query(collection(db, "referrals"), where("patientId", "==", selectedPatient.uid))),
+        ]);
+        if (cancelled) return;
+
+        const recordsData = recordsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        recordsData.sort((a: any, b: any) => new Date(b.readingTime || b.createdAt).getTime() - new Date(a.readingTime || a.createdAt).getTime());
+        setRecords(recordsData);
+
+        const labData = labSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        labData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setLabResults(labData);
+
+        const refData = refSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setReferrals(refData);
+      } catch (err) {
+        console.error("Error fetching selected patient's data:", err);
+      } finally {
+        if (!cancelled) setLoadingSelectedPatientData(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [selectedPatient?.uid, userData?.role]);
 
   const handleDiabetesLog = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -551,13 +595,13 @@ export default function MyChartDashboard() {
     let targetPatientName: string;
 
     if (userData.role === 'staff') {
-      if (!selectedUploadPatientId) {
+      if (!selectedPatient?.uid) {
         setMessage('Please select a patient.');
         return;
       }
-      targetPatientId = selectedUploadPatientId;
-      targetPatientEmail = selectedUploadPatientEmail;
-      targetPatientName = selectedUploadPatientName;
+      targetPatientId = selectedPatient.uid;
+      targetPatientEmail = selectedPatient.email;
+      targetPatientName = selectedPatient.fullName;
     } else {
       targetPatientId = user.uid;
       targetPatientEmail = user.email || '';
@@ -743,6 +787,7 @@ export default function MyChartDashboard() {
       setLabResults(labResults.filter(r => r.patientId !== patientId));
       setReferrals(referrals.filter(r => r.patientId !== patientId));
       setPatientList(patientList.filter(p => p.uid !== patientId));
+      setAlerts(alerts.filter(r => r.patientId !== patientId));
 
       // If viewing this patient's profile, close it
       if (selectedPatient?.uid === patientId) {
@@ -757,14 +802,11 @@ export default function MyChartDashboard() {
   };
 
   const filteredRecords = records.filter(record => {
-    // Filter by search term
+    // Filter this patient's records by search term
     if (userData?.role !== 'staff') return true;
     const term = searchTerm.toLowerCase();
     const matchesSearchTerm = (
       !searchTerm ||
-      record.patientEmail?.toLowerCase().includes(term) ||
-      record.patientPhone?.toLowerCase().includes(term) ||
-      record.patientName?.toLowerCase().includes(term) ||
       ((record.type === 'Hypertension Log')
         ? (record.value.systolic?.toString().includes(term) || record.value.diastolic?.toString().includes(term))
         : record.value?.toString().toLowerCase().includes(term)) ||
@@ -792,74 +834,6 @@ export default function MyChartDashboard() {
 
     return matchesSearchTerm && matchesDateRange;
   });
-
-  // Group records by patient (for staff view)
-  const groupedByPatient = () => {
-    if (userData?.role !== 'staff') return {};
-
-    const grouped: { [key: string]: any[] } = {};
-    filteredRecords.forEach(record => {
-      const patientId = record.patientId || record.patientEmail;
-      if (!grouped[patientId]) {
-        grouped[patientId] = [];
-      }
-      grouped[patientId].push(record);
-    });
-
-    // Sort each patient's records by date (newest first)
-    Object.keys(grouped).forEach(patientId => {
-      grouped[patientId].sort((a, b) => {
-        const dateA = new Date(a.readingTime || a.createdAt).getTime();
-        const dateB = new Date(b.readingTime || b.createdAt).getTime();
-        return dateB - dateA;
-      });
-    });
-
-    return grouped;
-  };
-
-  const patientGroups = groupedByPatient();
-
-  // Get sorted patient IDs
-  const getSortedPatientIds = () => {
-    const patientIds = Object.keys(patientGroups);
-
-    if (sortBy === 'name') {
-      return patientIds.sort((a, b) => {
-        const nameA = patientGroups[a][0]?.patientName || patientGroups[a][0]?.patientEmail || '';
-        const nameB = patientGroups[b][0]?.patientName || patientGroups[b][0]?.patientEmail || '';
-        return nameA.localeCompare(nameB);
-      });
-    } else if (sortBy === 'readings') {
-      return patientIds.sort((a, b) => patientGroups[b].length - patientGroups[a].length);
-    } else { // 'date' - sort by most recent reading
-      return patientIds.sort((a, b) => {
-        const latestA = new Date(patientGroups[a][0]?.readingTime || patientGroups[a][0]?.createdAt).getTime();
-        const latestB = new Date(patientGroups[b][0]?.readingTime || patientGroups[b][0]?.createdAt).getTime();
-        return latestB - latestA;
-      });
-    }
-  };
-
-  const togglePatientExpanded = (patientId: string) => {
-    setExpandedPatients(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(patientId)) {
-        newSet.delete(patientId);
-      } else {
-        newSet.add(patientId);
-      }
-      return newSet;
-    });
-  };
-
-  const expandAllPatients = () => {
-    setExpandedPatients(new Set(Object.keys(patientGroups)));
-  };
-
-  const collapseAllPatients = () => {
-    setExpandedPatients(new Set());
-  };
 
   const handleUpdatePrescription = async () => {
     if (!selectedPatient || !selectedPatient.uid) return;
@@ -1039,6 +1013,36 @@ if (!user) {
           </div>
         </div>
 
+        {/* Patient Workspace - Staff Only */}
+        {userData?.role === 'staff' && (
+          <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+            <PatientAlertsPanel
+              alertRecords={alerts}
+              patientList={patientList}
+              onSelectPatient={viewPatientProfile}
+            />
+            {selectedPatient ? (
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <p className="text-base text-[#4A3A33]">
+                  Currently viewing: <span className="font-bold">{selectedPatient.fullName || selectedPatient.email}</span>
+                </p>
+                <button
+                  onClick={() => setSelectedPatient(null)}
+                  className="text-sm font-semibold text-[#8AAB88] hover:text-[#4A3A33] px-4 py-2 rounded-lg hover:bg-[#8AAB88]/10 transition-all"
+                >
+                  Change patient
+                </button>
+              </div>
+            ) : (
+              <PatientSearchSelect
+                patients={patientList}
+                alertPatientIds={new Set(alerts.map((r) => r.patientId).filter(Boolean))}
+                onSelect={viewPatientProfile}
+              />
+            )}
+          </div>
+        )}
+
         {/* Profile Section */}
         {(userData?.role === 'patient' || selectedPatient) && (
           <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
@@ -1074,10 +1078,10 @@ if (!user) {
               </div>
               {userData?.role === 'staff' && selectedPatient && (
                 <button
-                  onClick={() => setSelectedPatient(null)}
-                  className="text-sm font-semibold text-[#8AAB88] hover:text-[#4A3A33] px-4 py-2 rounded-lg hover:bg-[#8AAB88]/10 transition-all shrink-0"
+                  onClick={() => handlePatientDelete(selectedPatient.uid, selectedPatient.fullName, selectedPatient.email)}
+                  className="text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 px-4 py-2 rounded-lg transition-all shrink-0 shadow-md"
                 >
-                  Close Profile
+                  Delete Patient
                 </button>
               )}
             </div>
@@ -1197,11 +1201,7 @@ if (!user) {
             setLabUploadProgress={setLabUploadProgress}
             labUploadMessage={labUploadMessage}
             setLabUploadMessage={setLabUploadMessage}
-            patientList={patientList}
-            selectedUploadPatientId={selectedUploadPatientId}
-            setSelectedUploadPatientId={setSelectedUploadPatientId}
-            setSelectedUploadPatientEmail={setSelectedUploadPatientEmail}
-            setSelectedUploadPatientName={setSelectedUploadPatientName}
+            selectedPatient={selectedPatient}
             handleFileUpload={handleFileUpload}
             handleFileDelete={handleFileDelete}
             setLabResults={setLabResults}
@@ -1224,11 +1224,7 @@ if (!user) {
           setReferralUploadProgress={setReferralUploadProgress}
           referralUploadMessage={referralUploadMessage}
           setReferralUploadMessage={setReferralUploadMessage}
-          patientList={patientList}
-          selectedUploadPatientId={selectedUploadPatientId}
-          setSelectedUploadPatientId={setSelectedUploadPatientId}
-          setSelectedUploadPatientEmail={setSelectedUploadPatientEmail}
-          setSelectedUploadPatientName={setSelectedUploadPatientName}
+          selectedPatient={selectedPatient}
           handleFileUpload={handleFileUpload}
           handleFileDelete={handleFileDelete}
           setReferrals={setReferrals}
@@ -1250,12 +1246,15 @@ if (!user) {
             </h2>
           </div>
 
+          {userData?.role === 'staff' && !selectedPatient ? (
+            <p className="text-[#4A3A33]/60">Select a patient above to view their records.</p>
+          ) : (
           <div className="space-y-4">
             {userData?.role === 'staff' && (
               <div className="space-y-3">
                 <input
                   type="text"
-                  placeholder="Search by name, email, phone..."
+                  placeholder="Filter by reading type or value..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 sm:p-4 text-base text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
@@ -1276,29 +1275,6 @@ if (!user) {
                     title="End Date"
                   />
                 </div>
-                <div className="flex flex-wrap gap-2 items-center">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="flex-1 min-w-[150px] rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 text-sm text-[#4A3A33] transition-all"
-                  >
-                    <option value="date">Sort: Recent Activity</option>
-                    <option value="name">Sort: Patient Name</option>
-                    <option value="readings">Sort: Most Readings</option>
-                  </select>
-                  <button
-                    onClick={expandAllPatients}
-                    className="px-4 py-2.5 text-sm font-semibold text-[#4A3A33] bg-white border-2 border-[#D9A68A]/40 hover:bg-[#EFE7DD] rounded-xl transition-all"
-                  >
-                    Expand All
-                  </button>
-                  <button
-                    onClick={collapseAllPatients}
-                    className="px-4 py-2.5 text-sm font-semibold text-[#4A3A33] bg-white border-2 border-[#D9A68A]/40 hover:bg-[#EFE7DD] rounded-xl transition-all"
-                  >
-                    Collapse All
-                  </button>
-                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={handleExportPdf}
@@ -1315,252 +1291,18 @@ if (!user) {
                 </div>
               </div>
             )}
-            {userData?.role === 'staff' ? (
-            /* Staff View: Grouped by Patient */
-            Object.keys(patientGroups).length === 0 ? (
-              <div className="text-center py-16 bg-gradient-to-br from-[#EFE7DD]/40 to-[#f7f2ea]/20 rounded-xl border-2 border-dashed border-[#D9A68A]/40">
-                <div className="max-w-sm mx-auto">
-                  <div className="w-16 h-16 bg-[#D9A68A]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-[#D9A68A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                  </div>
-                  <p className="text-[#4A3A33]/70 font-medium">No patient records found.</p>
-                  <p className="text-sm text-[#4A3A33]/50 mt-1">Patient health readings will appear here once logged.</p>
-                </div>
-              </div>
+            {loadingSelectedPatientData ? (
+              <div className="text-center py-16 text-[#4A3A33]/60">Loading records...</div>
             ) : (
-              <div className="space-y-4">
-                {getSortedPatientIds().map((patientId) => {
-                  const patientRecords = patientGroups[patientId];
-                  const latestRecord = patientRecords[0];
-                  // Determine patient name:
-                  // 1. Use latestRecord.patientName if available.
-                  // 2. Fallback to searching patientList by uid (preferred) or email.
-                  // 3. Fallback to 'Unknown Patient' if not found.
-                  let patientName = latestRecord.patientName;
-                  if (!patientName) {
-                    const matchedPatient = patientList.find(
-                      (p) => p.uid === patientId || p.email === (latestRecord.patientEmail || '')
-                    );
-                    patientName = matchedPatient?.fullName || 'Unknown Patient';
-                  }
-                  const patientEmail = latestRecord.patientEmail;
-                  const isExpanded = expandedPatients.has(patientId);
-
-                  // Count flags
-                  const criticalCount = patientRecords.filter(r => r.flag === 'Hypertensive Crisis' || r.flag === 'High' || r.flag === 'Stage 2 High').length;
-                  const warningCount = patientRecords.filter(r => r.flag === 'Stage 1 High' || r.flag === 'Elevated').length;
-
-                  return (
-                    <div key={patientId} className="bg-gradient-to-br from-white to-[#EFE7DD]/10 rounded-2xl border-2 border-[#D9A68A]/20 overflow-hidden transition-all duration-200 hover:shadow-lg">
-                      {/* Patient Card Header */}
-                      <div
-                        onClick={() => togglePatientExpanded(patientId)}
-                        className="p-4 sm:p-6 cursor-pointer hover:bg-[#EFE7DD]/20 transition-all"
-                      >
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-base sm:text-lg font-bold text-[#4A3A33] truncate">{patientName}</h3>
-                              {criticalCount > 0 && (
-                                <span className="px-2.5 py-1 bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-full">
-                                  {criticalCount} Critical
-                                </span>
-                              )}
-                              {warningCount > 0 && (
-                                <span className="px-2.5 py-1 bg-yellow-500 text-white text-[10px] sm:text-xs font-bold rounded-full">
-                                  {warningCount} Warning
-                                </span>
-                              )}
-                            
-                            </div>
-                            <p className="text-sm text-[#4A3A33]/70 truncate mb-1">{patientEmail}</p>
-                            <div className="flex flex-wrap gap-3 text-xs sm:text-sm text-[#4A3A33]/60">
-                              <span className="font-medium">
-                                📊 {patientRecords.length} reading{patientRecords.length !== 1 ? 's' : ''}
-                              </span>
-                              <span className="font-medium">
-                                🕐 Latest: {new Date(latestRecord.readingTime || latestRecord.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                viewPatientProfile(latestRecord.patientId);
-                              }}
-                              className="px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-[#8AAB88] to-[#7a9b78] hover:from-[#7a9b78] hover:to-[#8AAB88] rounded-xl transition-all shadow-md"
-                            >
-                              View Profile
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePatientDelete(patientId, patientName, patientEmail);
-                              }}
-                              className="px-3 sm:px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-xl transition-all shadow-md"
-                              title="Delete Patient"
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                            <svg
-                              className={`w-6 h-6 text-[#4A3A33] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Patient Records (Collapsible) */}
-                      {isExpanded && (
-                        <div className="border-t-2 border-[#D9A68A]/20 bg-[#EFE7DD]/10 p-4 sm:p-6">
-                          <div className="space-y-3">
-                            {patientRecords.map((r) => {
-                              let flagClasses = '';
-                              if (r.flag === 'Hypertensive Crisis') {
-                                flagClasses = 'bg-gradient-to-r from-red-600 to-red-700 text-white';
-                              } else if (r.flag === 'Low') {
-                                flagClasses = 'bg-gradient-to-r from-blue-500 to-blue-600 text-white';
-                              } else if (r.flag === 'Stage 2 High' || r.flag === 'High') {
-                                flagClasses = 'bg-gradient-to-r from-orange-500 to-red-500 text-white';
-                              } else if (r.flag === 'Stage 1 High') {
-                                flagClasses = 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white';
-                              } else if (r.flag === 'Elevated') {
-                                flagClasses = 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-[#4A3A33]';
-                              }
-
-                              return (
-                                <div key={r.id} className="p-4 bg-white rounded-xl border border-[#D9A68A]/20 hover:shadow-md transition-all">
-                                  <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                                        <span className="font-bold text-base sm:text-lg text-[#4A3A33]">{r.subType || r.type}</span>
-                                        {r.flag && r.flag !== 'Normal' && (
-                                          <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-sm ${flagClasses}`}>
-                                            {r.flag}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <span className="text-sm text-[#4A3A33]/70 block font-medium">
-                                        {new Date(r.readingTime || r.createdAt).toLocaleString()}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-3 shrink-0">
-                                      <div className="text-left sm:text-right">
-                                        {r.type === 'Hypertension Log' ? (
-                                          <>
-                                            <span className="text-2xl sm:text-3xl font-bold block text-[#4A3A33]">
-                                              {r.value.systolic}/{r.value.diastolic}
-                                              <span className="text-sm font-normal ml-2 text-[#4A3A33]/60">{r.unit}</span>
-                                            </span>
-                                            <span className="text-sm text-[#4A3A33]/70 mt-1 block font-medium">
-                                              Pulse: {r.value.pulse} bpm
-                                            </span>
-                                          </>
-                                        ) : (
-                                          <span className="text-2xl sm:text-3xl font-bold block text-[#4A3A33]">
-                                            {r.value}
-                                            <span className="text-sm font-normal ml-2 text-[#4A3A33]/60">{r.unit}</span>
-                                          </span>
-                                        )}
-                                      </div>
-                                      <button
-                                        onClick={() => handleRecordDelete(r.id, r.type)}
-                                        className="p-2 text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg transition-all shadow-sm"
-                                        title="Delete record"
-                                      >
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )
-          ) : (
-            /* Patient View: Flat List */
-            filteredRecords.length === 0 ? (
-              <div className="text-center py-16 bg-gradient-to-br from-[#EFE7DD]/40 to-[#f7f2ea]/20 rounded-xl border-2 border-dashed border-[#D9A68A]/40">
-                <div className="max-w-sm mx-auto">
-                  <div className="w-16 h-16 bg-[#D9A68A]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-[#D9A68A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-[#4A3A33]/70 font-medium">No records found.</p>
-                  <p className="text-sm text-[#4A3A33]/50 mt-1">Your health readings will appear here once logged.</p>
-                </div>
-              </div>
-            ) : (
-              <ul className="space-y-4">
-                {filteredRecords.map((r) => {
-                  let flagClasses = '';
-                  if (r.flag === 'Hypertensive Crisis') {
-                    flagClasses = 'bg-gradient-to-r from-red-600 to-red-700 text-white';
-                  } else if (r.flag === 'Low') {
-                    flagClasses = 'bg-gradient-to-r from-blue-500 to-blue-600 text-white';
-                  } else if (r.flag === 'Stage 2 High' || r.flag === 'High') {
-                    flagClasses = 'bg-gradient-to-r from-orange-500 to-red-500 text-white';
-                  } else if (r.flag === 'Stage 1 High') {
-                    flagClasses = 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white';
-                  } else if (r.flag === 'Elevated') {
-                    flagClasses = 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-[#4A3A33]';
-                  }
-                  return (
-                  <li key={r.id} className="p-4 sm:p-6 bg-gradient-to-br from-white to-[#EFE7DD]/10 rounded-xl border-2 border-[#D9A68A]/20 hover:border-[#8AAB88] hover:shadow-md transition-all duration-200 text-[#4A3A33]">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                          <span className="font-bold text-lg sm:text-xl">{r.subType || r.type}</span>
-                          {r.flag && r.flag !== 'Normal' && (
-                            <span className={`text-xs sm:text-sm font-bold px-3 py-1 sm:px-4 sm:py-1.5 rounded-full shadow-sm whitespace-nowrap ${flagClasses}`}>
-                              {r.flag}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-sm sm:text-base text-[#4A3A33]/70 block font-medium">{new Date(r.readingTime || r.createdAt).toLocaleString()}</span>
-                      </div>
-                      <div className="text-left sm:text-right shrink-0">
-                        {r.type === 'Hypertension Log' ? (
-                          <>
-                            <span className="text-2xl sm:text-3xl font-bold block text-[#4A3A33]">
-                              {r.value.systolic}/{r.value.diastolic}
-                              <span className="text-sm sm:text-base font-normal ml-2 text-[#4A3A33]/60">{r.unit}</span>
-                            </span>
-                            <span className="text-sm sm:text-base text-[#4A3A33]/70 mt-1 sm:mt-2 block font-medium">Pulse: {r.value.pulse} bpm</span>
-                          </>
-                        ) : (
-                          <span className="text-2xl sm:text-3xl font-bold block text-[#4A3A33]">
-                            {r.value}
-                            <span className="text-sm sm:text-base font-normal ml-2 text-[#4A3A33]/60">{r.unit}</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </li>
-                  );
-                })}
-              </ul>
-            )
-          )}
+              <RecordsList
+                records={filteredRecords}
+                onDelete={userData?.role === 'staff' ? handleRecordDelete : undefined}
+                emptyTitle={userData?.role === 'staff' ? 'No records for this patient yet.' : 'No records found.'}
+                emptySubtitle={userData?.role === 'staff' ? 'Their health readings will appear here once logged.' : 'Your health readings will appear here once logged.'}
+              />
+            )}
           </div>
+          )}
         </div>
 
         {/* Footer with Links to Legal Pages */}

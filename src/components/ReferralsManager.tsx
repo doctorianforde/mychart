@@ -14,11 +14,7 @@ interface ReferralsManagerProps {
   setReferralUploadProgress: (v: number) => void;
   referralUploadMessage: string;
   setReferralUploadMessage: (v: string) => void;
-  patientList: any[];
-  selectedUploadPatientId: string;
-  setSelectedUploadPatientId: (id: string) => void;
-  setSelectedUploadPatientEmail: (email: string) => void;
-  setSelectedUploadPatientName: (name: string) => void;
+  selectedPatient: { uid: string; email: string; fullName: string } | null;
   handleFileUpload: (
     e: React.FormEvent,
     collectionName: 'labResults' | 'referrals',
@@ -46,10 +42,18 @@ interface ReferralsManagerProps {
 export default function ReferralsManager({
   userData, user, referrals, referralFile, setReferralFile, referralDescription, setReferralDescription,
   referralUploading, setReferralUploading, referralUploadProgress, setReferralUploadProgress,
-  referralUploadMessage, setReferralUploadMessage, patientList, selectedUploadPatientId,
-  setSelectedUploadPatientId, setSelectedUploadPatientEmail, setSelectedUploadPatientName,
+  referralUploadMessage, setReferralUploadMessage, selectedPatient,
   handleFileUpload, handleFileDelete, setReferrals, validateFile
 }: ReferralsManagerProps) {
+  if (userData?.role === 'staff' && !selectedPatient) {
+    return (
+      <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-[#4A3A33] font-['Montserrat']">Referrals</h2>
+        <p className="text-[#4A3A33]/60">Select a patient above to view or upload referrals.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
       <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-[#4A3A33] font-['Montserrat']">Referrals</h2>
@@ -58,28 +62,10 @@ export default function ReferralsManager({
         onSubmit={(e) => handleFileUpload(e, 'referrals', referralFile, referralDescription, setReferralUploading, setReferralUploadProgress, setReferralUploadMessage, setReferralFile, setReferralDescription, referrals, setReferrals)}
         className="space-y-6 mb-8"
       >
-        {userData?.role === 'staff' && (
-          <div>
-            <label className="block text-base font-bold text-[#4A3A33] mb-3">Select Patient</label>
-            <select
-              required
-              value={selectedUploadPatientId}
-              onChange={(e) => {
-                const selected = patientList.find(p => p.uid === e.target.value);
-                setSelectedUploadPatientId(e.target.value);
-                setSelectedUploadPatientEmail(selected?.email || '');
-                setSelectedUploadPatientName(selected?.fullName || '');
-              }}
-              className="block w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-4 text-base text-[#4A3A33] transition-all cursor-pointer"
-            >
-              <option value="">-- Select a patient --</option>
-              {patientList.map(p => (
-                <option key={p.uid} value={p.uid}>
-                  {p.fullName ? `${p.fullName} (${p.email})` : p.email}
-                </option>
-              ))}
-            </select>
-          </div>
+        {userData?.role === 'staff' && selectedPatient && (
+          <p className="text-sm font-semibold text-[#8AAB88]">
+            Uploading for: {selectedPatient.fullName || selectedPatient.email}
+          </p>
         )}
 
         <div>
@@ -162,9 +148,6 @@ export default function ReferralsManager({
                   )}
                   <p className="text-sm text-[#4A3A33]/60 font-medium">{new Date(item.createdAt).toLocaleString()}</p>
                   <p className="text-xs text-[#4A3A33]/50 mt-1">Uploaded by: {item.uploaderEmail} ({item.uploaderRole})</p>
-                  {userData?.role === 'staff' && (
-                    <p className="text-sm text-[#8AAB88] font-bold mt-1">Patient: {item.patientEmail}</p>
-                  )}
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <a
