@@ -60,7 +60,7 @@ export default function PatientSearchSelect({
           onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 p-3 sm:p-4 pl-11 text-base text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
+          className="w-full rounded-xl border-2 border-[#D9A68A]/40 bg-white shadow-sm focus:border-[#8AAB88] focus:ring-2 focus:ring-[#8AAB88]/20 py-3 sm:py-4 pl-11 pr-4 text-base text-[#4A3A33] placeholder:text-[#4A3A33]/40 transition-all"
         />
       </div>
 

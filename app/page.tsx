@@ -871,6 +871,16 @@ export default function MyChartDashboard() {
     }
   };
 
+  const handleToggleAlertArchive = async (recordIds: string[], archived: boolean) => {
+    try {
+      await Promise.all(recordIds.map(id => updateDoc(doc(db, 'records', id), { alertArchived: archived })));
+      setAlerts(prev => prev.map(r => recordIds.includes(r.id) ? { ...r, alertArchived: archived } : r));
+    } catch (error) {
+      console.error("Error updating alert archive status:", error);
+      alert("Failed to update alert. Please try again.");
+    }
+  };
+
   const handleSetCurrentTime = () => {
     const now = new Date();
     const date = [
@@ -1015,11 +1025,12 @@ if (!user) {
 
         {/* Patient Workspace - Staff Only */}
         {userData?.role === 'staff' && (
-          <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+          <div className="relative z-30 mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
             <PatientAlertsPanel
               alertRecords={alerts}
               patientList={patientList}
               onSelectPatient={viewPatientProfile}
+              onToggleArchive={handleToggleAlertArchive}
             />
             {selectedPatient ? (
               <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -1036,7 +1047,7 @@ if (!user) {
             ) : (
               <PatientSearchSelect
                 patients={patientList}
-                alertPatientIds={new Set(alerts.map((r) => r.patientId).filter(Boolean))}
+                alertPatientIds={new Set(alerts.filter((r) => !r.alertArchived).map((r) => r.patientId).filter(Boolean))}
                 onSelect={viewPatientProfile}
               />
             )}
@@ -1185,29 +1196,26 @@ if (!user) {
         )}
 
         {/* Lab Results Section - Both Roles */}
-        <div className="mb-8 p-4 sm:p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
-          {/* Lab Results Display */}
-          <LabResultsManager
-            userData={userData}
-            user={user}
-            labResults={labResults}
-            labFile={labFile}
-            setLabFile={setLabFile}
-            labDescription={labDescription}
-            setLabDescription={setLabDescription}
-            labUploading={labUploading}
-            setLabUploading={setLabUploading}
-            labUploadProgress={labUploadProgress}
-            setLabUploadProgress={setLabUploadProgress}
-            labUploadMessage={labUploadMessage}
-            setLabUploadMessage={setLabUploadMessage}
-            selectedPatient={selectedPatient}
-            handleFileUpload={handleFileUpload}
-            handleFileDelete={handleFileDelete}
-            setLabResults={setLabResults}
-            validateFile={validateFile}
-          />
-        </div>
+        <LabResultsManager
+          userData={userData}
+          user={user}
+          labResults={labResults}
+          labFile={labFile}
+          setLabFile={setLabFile}
+          labDescription={labDescription}
+          setLabDescription={setLabDescription}
+          labUploading={labUploading}
+          setLabUploading={setLabUploading}
+          labUploadProgress={labUploadProgress}
+          setLabUploadProgress={setLabUploadProgress}
+          labUploadMessage={labUploadMessage}
+          setLabUploadMessage={setLabUploadMessage}
+          selectedPatient={selectedPatient}
+          handleFileUpload={handleFileUpload}
+          handleFileDelete={handleFileDelete}
+          setLabResults={setLabResults}
+          validateFile={validateFile}
+        />
 
 {/* Referrals Section - Both Roles */}
         <ReferralsManager
